@@ -45,8 +45,12 @@ const request = ({ cookie, host, page = 1, options }) => {
 const scrape = async (options = [], name) => {
     const result = [];
 
-    console.log('cleaning...');
+    console.log('отчистка результатов прошлых запусков...');
 
+    const folderPath = path.join(path.resolve(), 'src', 'data');
+
+    await mkdirp(folderPath);
+    await remove();
     await writeFileAsync([], `${name}.json`);
 
     console.log('scraping...');
@@ -63,33 +67,32 @@ const scrape = async (options = [], name) => {
     const { countPages } = await request({ cookie, host, options });
     const requests = getRequestsCounts(countPages);
 
-    console.log(countPages);
+    console.log(`Найдено страниц: ${countPages}`);
 
     stopLoading(i);
 
     try {
         for await (const page of requests) {
-            if (page === 1) {
-                const { list } = await request({cookie, host, page, options});
+            const { list } = await request({cookie, host, page, options});
 
-                for await (const item of list) {
-                    const folderPath = path.join(path.resolve(), 'src', 'data', item.indexid);
-                    await mkdirp(folderPath);
+            for await (const item of list) {
+                const { indexid: id, picture } = item;
 
-                    await download(`https://${item.picture}`, item.indexid);
+                await mkdirp(path.join(folderPath, id));
 
-                    await writeFileAsync(item, `${item.indexid}/${item.indexid}.json`);
+                await download(`https://${picture}`, id);
 
-                    console.log(item);
-                }
+                await writeFileAsync(item, `${id}/${id}.json`);
 
-                console.log(`Was parsed page: ${page}`);
-                console.log(`Was found ${list.length} item`);
-
-                result.push(...list);
-
-                await delay(100);
+                console.log(item);
             }
+
+            console.log(`Was parsed page: ${page}`);
+            console.log(`Was found ${list.length} item`);
+
+            result.push(...list);
+
+            await delay(100);
         }
     } catch (e) {
         console.log(e);
@@ -98,14 +101,8 @@ const scrape = async (options = [], name) => {
     await writeFileAsync(result, `${name}.json`);
 };
 
-const main = async () => {
+const run = async () => {
     printHeader();
-
-    const folderPath = path.join(path.resolve(), 'src', 'data');
-
-    await mkdirp(folderPath);
-
-    await remove();
 
     const { choice } = await selectMode();
 
@@ -123,5 +120,5 @@ const main = async () => {
     }
 };
 
-main()
+run()
     .catch(e => console.log(e));
