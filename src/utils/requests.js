@@ -2,7 +2,19 @@ const fetch = require('node-fetch');
 const htmlToText = require('html-to-text');
 
 const getHeigth = str =>
-    +str.split(' ').filter(i => i.length === 3 && !isNaN(+i))[0];
+    +str.split(' ').filter(i => {
+        // find '164'
+        if (i.length === 3 && !isNaN(+i)) {
+            return i
+        }
+
+        // find '164-178'
+        if (i.length > 3 && i.includes('-') &&
+            i.split('-').every((h) => !isNaN(+h))
+        ) {
+            return i;
+        }
+    })[0];
 
 const filterByNeedFields = (list, host) => list.map(({
     size_list = [],
@@ -15,6 +27,7 @@ const filterByNeedFields = (list, host) => list.map(({
     brend = {},
     cat_nazv = null,
     search = '',
+    gallery = '',
 }) => {
     const { nazv, indexid: brendId, url, infotext } = brend;
     const height = getHeigth(search);
@@ -26,6 +39,9 @@ const filterByNeedFields = (list, host) => list.map(({
         price_zakupka,
         text: parsedText,
         picture: `${host}${picture}`,
+        pictures: gallery.split('"')
+            .filter(p => p.includes('file'))
+            .map(url => `https://belbazar24.by${url}`),
         articul,
         indexid,
         sostav,

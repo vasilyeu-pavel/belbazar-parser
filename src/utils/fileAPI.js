@@ -12,8 +12,8 @@ const remove = () => new Promise(resolve => {
     });
 });
 
-const download = async (uri, filename) => {
-    const filepath = path.join(path.resolve(), 'src', 'data', `${filename}/${filename}.jpg`);
+const download = async (uri, folderName, filename) => {
+    const filepath = path.join(path.resolve(), 'src', 'data', `${folderName}/${filename}.jpg`);
 
     let file = fs.createWriteStream(filepath);
 
@@ -35,7 +35,7 @@ const download = async (uri, filename) => {
         })
             .pipe(file)
             .on('finish', () => {
-                console.log(`The file is finished downloading.`);
+                console.log(`The file is finished downloading. ${uri}`);
                 resolve();
             })
             .on('error', (error) => {

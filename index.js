@@ -72,15 +72,25 @@ const scrape = async (options = [], name) => {
     stopLoading(i);
 
     try {
+        // цикл по всем страницам
         for await (const page of requests) {
             const { list } = await request({cookie, host, page, options});
 
+            // цикл по всем вещам в списке
             for await (const item of list) {
-                const { indexid: id, picture } = item;
+                const { indexid: id, pictures } = item;
 
                 await mkdirp(path.join(folderPath, id));
 
-                await download(`https://${picture}`, id);
+                // скачать все картинки
+                let i = 1;
+                for await (const picture of pictures) {
+
+                    await download(picture, id, `${id}_${i}`);
+
+                    await delay(1000);
+                    i++;
+                }
 
                 await writeFileAsync(item, `${id}/${id}.json`);
 
