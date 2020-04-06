@@ -43,6 +43,7 @@ const request = ({ cookie, host, page = 1, options }) => {
 };
 
 const scrape = async (options = [], name) => {
+    console.time('scraping');
     const result = [];
 
     console.log('отчистка результатов прошлых запусков...');
@@ -114,6 +115,7 @@ const scrape = async (options = [], name) => {
     }
 
     await writeFileAsync(result, `${name}.json`);
+    console.timeEnd('scraping');
 };
 
 const run = async () => {
