@@ -83,16 +83,21 @@ const scrape = async (options = [], name) => {
                 await mkdirp(path.join(folderPath, id));
 
                 // скачать все картинки
-                let i = 1;
-                for await (const picture of pictures) {
+                await Promise.all(pictures.map((picture, i) =>
+                    download(picture, id, `${id}_${i+1}`))
+                );
 
-                    await download(picture, id, `${id}_${i}`);
+                await delay(500);
 
-                    await delay(1000);
-                    i++;
-                }
-
-                await writeFileAsync(item, `${id}/${id}.json`);
+                // скачать все картинки
+                // for await (const picture of pictures) {
+                //
+                //     await download(picture, id, `${id}_${i}`);
+                //
+                //     await delay(1000);
+                // }
+                //
+                // await writeFileAsync(item, `${id}/${id}.json`);
 
                 console.log(item);
             }
