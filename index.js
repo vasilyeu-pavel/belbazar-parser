@@ -43,6 +43,7 @@ const request = ({ cookie, host, page = 1, options }) => {
 };
 
 const scrape = async (options = [], name) => {
+    return;
     console.time('scraping');
     const result = [];
 
@@ -124,17 +125,19 @@ const run = async () => {
     const { choice } = await selectMode();
 
     switch (choice) {
+        case 'Выход!': return;
         case 'За все время': {
-            return await scrape([], 'all');
+             await scrape([], 'all');
         }
         case 'За неделю': {
-            return await scrape(['7day'], 'week');
+             await scrape(['7day'], 'week');
         }
         case 'За 48 часов': {
-            return await scrape(['2day'], 'days');
+             await scrape(['2day'], 'days');
         }
-        case 'Выход!': return;
     }
+
+    run().catch(e => console.log(e));
 };
 
 run()
