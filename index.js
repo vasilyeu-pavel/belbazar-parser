@@ -43,17 +43,25 @@ const request = ({ cookie, host, page = 1, options }) => {
 };
 
 const scrape = async (options = [], name) => {
-    return;
     console.time('scraping');
     const result = [];
+    const allCat = [];
+    const allBrends = [];
+    const catWithBrends = {};
 
     console.log('отчистка результатов прошлых запусков...');
 
     const folderPath = path.join(path.resolve(), 'src', 'data');
 
+    // создаем пустую директорию
     await mkdirp(folderPath);
     await remove();
-    await writeFileAsync([], `${name}.json`);
+
+    // создаем пустые файлы
+    await writeFileAsync(result, `${name}.json`);
+    await writeFileAsync(catWithBrends, 'catWithBrends.json');
+    await writeFileAsync(allBrends, 'allBrends.json');
+    await writeFileAsync(allCat, 'allCat.json');
 
     console.log('scraping...');
 
@@ -61,11 +69,13 @@ const scrape = async (options = [], name) => {
 
     const i = startLoading();
 
+    // подгружаем экстрактор
     const { domain, host } = parseUrl(url.parse(uri));
-
     const { parser } = require(`./src/extractors/${domain}`);
+    // вытягиваем куки с сайта
     const cookie = await parser(uri);
 
+    // запрашиваем список
     const { countPages } = await request({ cookie, host, options });
     const requests = getRequestsCounts(countPages);
 
@@ -80,28 +90,49 @@ const scrape = async (options = [], name) => {
 
             // цикл по всем вещам в списке
             for await (const item of list) {
-                const { indexid: id, pictures } = item;
+                const { indexid: id, pictures, brend: { nazv = '' } } = item;
 
-                await mkdirp(path.join(folderPath, id));
+                // пропускаем брэнд распродажа
+                if (nazv.toUpperCase() !== 'РАСПРОДАЖА') {
 
-                // скачать все картинки
-                await Promise.all(pictures.map((picture, i) =>
-                    download(picture, id, `${id}_${i+1}`))
-                );
+                    await mkdirp(path.join(folderPath, id));
 
-                await delay(500);
+                    // скачать все картинки
+                    await Promise.all(pictures.map((picture, i) =>
+                        download(picture, id, `${id}_${i + 1}`))
+                    );
 
-                // скачать все картинки
-                // for await (const picture of pictures) {
-                //
-                //     await download(picture, id, `${id}_${i}`);
-                //
-                //     await delay(1000);
-                // }
+                    await delay(500);
 
-                await writeFileAsync(item, `${id}/${id}.json`);
+                    // скачать все картинки
+                    // for await (const picture of pictures) {
+                    //
+                    //     await download(picture, id, `${id}_${i}`);
+                    //
+                    //     await delay(1000);
+                    // }
 
-                console.log(item);
+                    // сохраняем отдельно для каждой шмотки инфу
+                    await writeFileAsync(item, `${id}/${id}.json`);
+
+                    // сохраняем все категории
+                    if (!allCat.includes(item.cat_nazv)) {
+                        allCat.push(item.cat_nazv)
+                    }
+
+                    // сохраняем все брэнды
+                    if (!allBrends.includes(item.brend.nazv)) {
+                        allBrends.push(item.brend.nazv)
+                    }
+
+                    // сохраняем все брэнды дл категорий
+                    if (!catWithBrends[item.cat_nazv]) {
+                        catWithBrends[item.cat_nazv] = [];
+                    }
+                    catWithBrends[item.cat_nazv].push(item.brend.nazv);
+
+                    console.log(item);
+                }
             }
 
             console.log(`Was parsed page: ${page}`);
@@ -116,6 +147,9 @@ const scrape = async (options = [], name) => {
     }
 
     await writeFileAsync(result, `${name}.json`);
+    await writeFileAsync(catWithBrends, 'catWithBrends.json');
+    await writeFileAsync(allBrends, 'allBrends.json');
+    await writeFileAsync(allCat, 'allCat.json');
     console.timeEnd('scraping');
 };
 
@@ -136,8 +170,6 @@ const run = async () => {
              await scrape(['2day'], 'days');
         }
     }
-
-    run().catch(e => console.log(e));
 };
 
 run()
