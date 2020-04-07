@@ -97,8 +97,8 @@ const scrape = async (options = [], name) => {
                 //
                 //     await delay(1000);
                 // }
-                //
-                // await writeFileAsync(item, `${id}/${id}.json`);
+
+                await writeFileAsync(item, `${id}/${id}.json`);
 
                 console.log(item);
             }
