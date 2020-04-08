@@ -1,11 +1,15 @@
 const FormData = require('form-data');
 
-const getFormData = (data) => {
+const getFormData = (data, decode = false) => {
     const form = new FormData();
 
     data.forEach(item => {
         for (const key in item) {
-            form.append(key, item[key]);
+            if (!decode) {
+                form.append(key, item[key]);
+            } else {
+                form.append(decodeURI(key), item[key]);
+            }
         }
     });
 

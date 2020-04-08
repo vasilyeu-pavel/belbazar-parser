@@ -1,14 +1,14 @@
 const puppeteer = require('puppeteer');
 
 const blockedResourceTypes = [
-    'image',
-    'media',
-    'font',
-    'texttrack',
-    'object',
-    'beacon',
-    'csp_report',
-    'imageset',
+    // 'image',
+    // 'media',
+    // 'font',
+    // 'texttrack',
+    // 'object',
+    // 'beacon',
+    // 'csp_report',
+    // 'imageset',
     // 'stylesheet'
 ];
 
@@ -19,17 +19,17 @@ const skippedResources = [
     // 'adition',
     // 'exelator',
     // 'sharethrough',
-
-    'cdn.api.twitter',
-    'google-analytics',
-    'googletagmanager',
-    'google',
-    'fontawesome',
-    'facebook',
-    'analytics',
-    '.png',
-    'optimizely',
-
+    //
+    // 'cdn.api.twitter',
+    // 'google-analytics',
+    // 'googletagmanager',
+    // 'google',
+    // 'fontawesome',
+    // 'facebook',
+    // 'analytics',
+    // '.png',
+    // 'optimizely',
+    //
     // 'clicktale',
     // 'mixpanel',
     // 'zedo',
@@ -39,6 +39,19 @@ const skippedResources = [
 ];
 
 const getCookies = async (page) => await page.cookies();
+
+const auth = async (page, selectors, creds) => {
+    await page.waitForSelector(selectors.login);
+
+    const loginInput = await page.$(selectors.login);
+    await loginInput.type(creds.login);
+
+    const passInput = await page.$(selectors.pass);
+    await passInput.type(creds.pass);
+
+    const btn = await page.$(selectors.submit);
+    await btn.click();
+};
 
 const getPage = async (browser, url, isLoadScript = true) => {
     const page = await browser.newPage();
@@ -68,11 +81,12 @@ const getPage = async (browser, url, isLoadScript = true) => {
             });
         }
 
+        await page.setDefaultNavigationTimeout(0);
+
         await page.goto(url, {
-            waitLoad: true,
             waitNetworkIdle: true,
-            timeout: 29000,
-            waitUntil: 'networkidle0'
+            timeout: 0,
+            waitUntil: 'load'
         });
 
         return page;
@@ -94,14 +108,14 @@ const cookiesParser = (cookies, targetName) => {
     return str.trim();
 };
 
-const getBrowser = () => puppeteer.launch({
+const getBrowser = (hide = true) => puppeteer.launch({
     args: [
         '--no-sandbox',
         '--window-size=1920,1170','--window-position=0,0',
     ],
     defaultViewport:null,
     devtools: true,
-    headless: true // -------> for show browser
+    headless: hide // -------> for show browser
 });
 
 module.exports = {
@@ -109,4 +123,5 @@ module.exports = {
     cookiesParser,
     getPage,
     getCookies,
+    auth,
 };

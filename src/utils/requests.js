@@ -28,6 +28,7 @@ const filterByNeedFields = (list, host) => list.map(({
     cat_nazv = null,
     search = '',
     gallery = '',
+    nazv: itemNazv = '',
 }) => {
     const { nazv, indexid: brendId, url, infotext } = brend;
     const height = getHeigth(search);
@@ -47,15 +48,14 @@ const filterByNeedFields = (list, host) => list.map(({
         sostav,
         cat_nazv,
         height,
+        itemNazv,
         brend: {
             nazv, brendId, url, infotext
         }
     };
 });
 
-const getList = async ({ body, cookie, host }) => {
-    const url = 'https://belbazar24.by/ajax.php';
-
+const fetcher = async ({ cookie, url, body }) => {
     const res = await fetch(url, {
         method: 'POST',
         headers: {
@@ -63,7 +63,14 @@ const getList = async ({ body, cookie, host }) => {
         },
         body
     });
-    const { list, count_pages } = await res.json();
+
+   return await res.json();
+};
+
+const getList = async ({ body, cookie, host }) => {
+    const url = 'https://belbazar24.by/ajax.php';
+
+    const { list, count_pages } = await fetcher({ url, body, cookie });
 
     return {
         list: filterByNeedFields(list, host),
@@ -73,4 +80,5 @@ const getList = async ({ body, cookie, host }) => {
 
 module.exports = {
     getList,
+    fetcher,
 };

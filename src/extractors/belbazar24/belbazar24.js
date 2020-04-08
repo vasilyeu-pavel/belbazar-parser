@@ -1,4 +1,4 @@
-const { getBrowser, cookiesParser, getPage, getCookies } = require('../utils/page');
+const { getBrowser, cookiesParser, getPage, getCookies } = require('../../utils/page');
 
 const selectros = {
     sort: '#sort_form > select',
