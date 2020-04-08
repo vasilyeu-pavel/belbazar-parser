@@ -3,6 +3,17 @@ const path = require('path');
 const request = require('request');
 const rimraf = require('rimraf');
 
+const getAllParsedItemPath = () => {
+    const pathFolder = './src/data/';
+
+    return fs.readdirSync(pathFolder)
+        .filter(name => fs.lstatSync(path.join(pathFolder, name)).isDirectory())
+        .map((name) => ({
+            id: name,
+            path: path.join(pathFolder, name)
+        }));
+};
+
 const remove = () => new Promise(resolve => {
     const folderPath = path.join(path.resolve(), 'src', 'data');
 
@@ -74,4 +85,5 @@ module.exports = {
     writeFileAsync,
     download,
     remove,
+    getAllParsedItemPath,
 };

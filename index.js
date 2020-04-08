@@ -49,7 +49,7 @@ const scrape = async (options = [], name) => {
     const allBrends = [];
     const catWithBrends = {};
 
-    console.log('отчистка результатов прошлых запусков...');
+    console.log('Отчистка результатов прошлых запусков...');
 
     const folderPath = path.join(path.resolve(), 'src', 'data');
 
@@ -71,7 +71,7 @@ const scrape = async (options = [], name) => {
 
     // подгружаем экстрактор
     const { domain, host } = parseUrl(url.parse(uri));
-    const { parser } = require(`./src/extractors/${domain}`);
+    const { parser } = require(`./src/extractors/${domain}/${domain}`);
     // вытягиваем куки с сайта
     const cookie = await parser(uri);
 
@@ -86,7 +86,7 @@ const scrape = async (options = [], name) => {
     try {
         // цикл по всем страницам
         for await (const page of requests) {
-            const { list } = await request({cookie, host, page, options});
+            const { list } = await request({ cookie, host, page, options });
 
             // цикл по всем вещам в списке
             for await (const item of list) {
@@ -168,6 +168,11 @@ const run = async () => {
         }
         case 'За 48 часов': {
              await scrape(['2day'], 'days');
+        }
+        case 'Закинуть на millmoda': {
+            const { parser } = require(`./src/extractors/millmoda/millmoda.js`);
+
+            await parser();
         }
     }
 };

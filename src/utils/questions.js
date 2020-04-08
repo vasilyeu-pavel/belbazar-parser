@@ -17,6 +17,9 @@ const selectMode = async () => {
                     name: 'За 48 часов'
                 },
                 {
+                    name: 'Закинуть на millmoda'
+                },
+                {
                     name: 'Выход!'
                 }
             ]
