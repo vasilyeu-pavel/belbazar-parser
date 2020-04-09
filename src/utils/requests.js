@@ -1,20 +1,26 @@
 const fetch = require('node-fetch');
 const htmlToText = require('html-to-text');
 
-const getHeigth = str =>
-    +str.split(' ').filter(i => {
+const getHeightAndSeason = str =>
+    str.split(' ').map((i, j) => {
         // find '164'
         if (i.length === 3 && !isNaN(+i)) {
-            return i
+            return ({
+                height: i || 0,
+                season: str.split(' ')[j + 1] || '',
+            })
         }
 
         // find '164-178'
         if (i.length > 3 && i.includes('-') &&
             i.split('-').every((h) => !isNaN(+h))
         ) {
-            return i;
+            return ({
+                height: i || 0,
+                season: str.split(' ')[j + 1] || '',
+            })
         }
-    })[0];
+    }).filter(Boolean);
 
 const filterByNeedFields = (list, host) => list.map(({
     size_list = [],
@@ -31,7 +37,7 @@ const filterByNeedFields = (list, host) => list.map(({
     nazv: itemNazv = '',
 }) => {
     const { nazv, indexid: brendId, url, infotext } = brend;
-    const height = getHeigth(search);
+    const [{ height, season }] = getHeightAndSeason(search);
 
     const parsedText = htmlToText.fromString(text).replace(/\n/g,'');
 
@@ -49,6 +55,7 @@ const filterByNeedFields = (list, host) => list.map(({
         cat_nazv,
         height,
         itemNazv,
+        season,
         brend: {
             nazv, brendId, url, infotext
         }
