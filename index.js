@@ -96,10 +96,10 @@ const scrape = async (options = [], name) => {
 
                 // пропускаем брэнд распродажа
                 if (
-                    nazv.toUpperCase() !== 'РАСПРОДАЖА' ||
-                    !nazv.includes('Elpaiz') ||
-                    !nazv.includes('LaVela') ||
-                    !nazv.includes('Леди Стиль Классик')
+                    nazv.toUpperCase() !== 'РАСПРОДАЖА'
+                    // !nazv.includes('Elpaiz') ||
+                    // !nazv.includes('LaVela') ||
+                    // !nazv.includes('Леди Стиль Классик')
 
                 ) {
 
@@ -178,18 +178,18 @@ const run = async () => {
     switch (choice) {
         case 'Выход!': return;
         case 'За все время': {
-             await scrape([], 'all');
+            return await scrape([], 'all');
         }
         case 'За неделю': {
-             await scrape(['7day'], 'week');
+            return await scrape(['7day'], 'week');
         }
         case 'За 48 часов': {
-             await scrape(['2day'], 'days');
+            return await scrape(['2day'], 'days');
         }
         case 'Закинуть на millmoda': {
             const { parser } = require(`./src/extractors/millmoda/millmoda.js`);
 
-            await parser();
+            return await parser();
         }
     }
 };
