@@ -63,19 +63,22 @@ const parser = async () => {
     await browser.close();
 };
 
-// todo разобраться категориями и брэндами
+// todo разобраться категориями и брэндами и сезоны
 const createThing = async ({ cookie, itemInfo, allImgPath }) => {
     const { price_zakupka, text, sostav, size_list, height, indexid, itemNazv } = itemInfo;
 
     const url = 'https://millmoda.ru/admin/catalog/add/item?page=1';
 
-    const id = Date.now();
-
     const dateNow = moment().format('DD.MM.YYYY');
 
     // залить все картинки
     const imgs = await Promise.all(allImgPath.map((filename) =>
-        createImg({ cookie, filename, add_date: dateNow }))
+        createImg({
+            cookie,
+            filename,
+            add_date: dateNow,
+            sku: indexid,
+        }))
     );
 
     let photoIds = '';

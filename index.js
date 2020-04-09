@@ -47,6 +47,7 @@ const scrape = async (options = [], name) => {
     const result = [];
     const allCat = [];
     const allBrends = [];
+    const seasons = [];
     const catWithBrends = {};
 
     console.log('Отчистка результатов прошлых запусков...');
@@ -54,14 +55,15 @@ const scrape = async (options = [], name) => {
     const folderPath = path.join(path.resolve(), 'src', 'data');
 
     // создаем пустую директорию
-    await mkdirp(folderPath);
-    await remove();
+    // await mkdirp(folderPath);
+    // await remove();
 
     // создаем пустые файлы
     await writeFileAsync(result, `${name}.json`);
     await writeFileAsync(catWithBrends, 'catWithBrends.json');
     await writeFileAsync(allBrends, 'allBrends.json');
     await writeFileAsync(allCat, 'allCat.json');
+    await writeFileAsync(seasons, 'seasons.json');
 
     console.log('scraping...');
 
@@ -93,7 +95,13 @@ const scrape = async (options = [], name) => {
                 const { indexid: id, pictures, brend: { nazv = '' } } = item;
 
                 // пропускаем брэнд распродажа
-                if (nazv.toUpperCase() !== 'РАСПРОДАЖА') {
+                if (
+                    nazv.toUpperCase() !== 'РАСПРОДАЖА' ||
+                    !nazv.includes('Elpaiz') ||
+                    !nazv.includes('LaVela') ||
+                    !nazv.includes('Леди Стиль Классик')
+
+                ) {
 
                     await mkdirp(path.join(folderPath, id));
 
@@ -120,6 +128,11 @@ const scrape = async (options = [], name) => {
                         allCat.push(item.cat_nazv)
                     }
 
+                    // сохраняем все сезоны
+                    if (!seasons.includes(item.season)) {
+                        seasons.push(item.season)
+                    }
+
                     // сохраняем все брэнды
                     if (!allBrends.includes(item.brend.nazv)) {
                         allBrends.push(item.brend.nazv)
@@ -130,6 +143,12 @@ const scrape = async (options = [], name) => {
                         catWithBrends[item.cat_nazv] = [];
                     }
                     catWithBrends[item.cat_nazv].push(item.brend.nazv);
+
+                    // сохраняем собирательные файлы
+                    await writeFileAsync(catWithBrends, 'catWithBrends.json');
+                    await writeFileAsync(allBrends, 'allBrends.json');
+                    await writeFileAsync(allCat, 'allCat.json');
+                    await writeFileAsync(seasons, 'seasons.json');
 
                     console.log(item);
                 }
@@ -144,12 +163,10 @@ const scrape = async (options = [], name) => {
         }
     } catch (e) {
         console.log(e);
+    } finally {
+        await writeFileAsync(result, `${name}.json`);
     }
 
-    await writeFileAsync(result, `${name}.json`);
-    await writeFileAsync(catWithBrends, 'catWithBrends.json');
-    await writeFileAsync(allBrends, 'allBrends.json');
-    await writeFileAsync(allCat, 'allCat.json');
     console.timeEnd('scraping');
 };
 
