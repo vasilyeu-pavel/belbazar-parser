@@ -2,6 +2,7 @@ const moment = require('moment');
 const fetch = require('node-fetch');
 
 const fs = require('fs');
+const path = require('path');
 
 const { getAllParsedItemPath, readFileAsync, writeFileAsync } = require('../../utils/fileAPI');
 
