@@ -45,11 +45,35 @@ const createImg = async ({ filename, cookie, name = 'test', category = 89, brand
     return await res.text();
 };
 
-const getRazmeri = (size_list) => {
+const getCatId = (cat) => ({
+        "Комплекты": 17,
+        "Платья и сарафаны": 84,
+        "Костюмы брючные": 91,
+        "Блузы и рубашки": 7,
+        "Брюки": 81,
+        "Костюмы юбочные": 18,
+        "Верхняя одежда": 80,
+        "Жакеты": 36,
+        "Кардиганы": 49,
+        "Спортивная одежда": 46,
+        "Жилеты": 26,
+        "Джемперы": 42,
+        "Комбинезоны": 45,
+        "Юбки": 43,
+        "Топы": 67,
+        "Туники": 40,
+        "Шорты": 54,
+        "Аксессуары": 82,
+        "Каталог": 0,
+        "Одежда для дома": 50,
+        "Купальники": 95
+    }[cat] || 0);
+
+const getSize = (size_list) => {
     // размеры
     // ключ - размер
     // value - id для сохранения в базе
-    const razmeri = {
+    const sizes = {
         38: "31",
         40: "25",
         42: "7",
@@ -75,8 +99,8 @@ const getRazmeri = (size_list) => {
     let str = '';
 
     size_list.forEach((s) => {
-        const razmerId = razmeri[s];
-        str += `${decodeURI('field[3][]')}=${razmerId}&`
+        const sizeId = sizes[s];
+        str += `${decodeURI('field[3][]')}=${sizeId}&`
     });
 
     return str;
@@ -114,6 +138,7 @@ const getHeight = (heights) => {
 
 module.exports = {
     createImg,
-    getRazmeri,
-    getHeight
+    getSize,
+    getHeight,
+    getCatId,
 };
