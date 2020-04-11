@@ -64,10 +64,14 @@ const getCatId = (cat) => ({
         "Туники": 40,
         "Шорты": 54,
         "Аксессуары": 82,
-        "Каталог": 0,
+        "Каталог": null,
         "Одежда для дома": 50,
         "Купальники": 95
-    }[cat] || 0);
+    }[cat] || null);
+
+const getBrandId = (brand) => ({
+
+    }[brand] || null);
 
 const getSize = (size_list) => {
     // размеры

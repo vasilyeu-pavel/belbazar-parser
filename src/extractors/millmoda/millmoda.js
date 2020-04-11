@@ -52,9 +52,10 @@ const parser = async () => {
         // получаем json файл в папке с товаром
         const itemInfo = await readFileAsync(`${id}/${id}.json`);
         if (
-            Object.keys(itemInfo).length &&
+            Object.keys(itemInfo).length ||
             // пропустить уже отправленные
             !wasSend.includes(id)
+            || getCatId(itemInfo.cat_nazv)
         ) {
             // получить все пути к картинкам в товаре
             const allImgPath = fs.readdirSync(path)
