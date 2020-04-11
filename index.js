@@ -1,4 +1,5 @@
 const url = require('url');
+const fs = require('fs');
 const path = require('path');
 const mkdirp = require('mkdirp');
 
@@ -59,17 +60,19 @@ const scrape = async (options = [], name) => {
     // await remove();
 
     // создаем пустые файлы
-    await writeFileAsync(result, `${name}.json`);
-    await writeFileAsync(catWithBrends, 'catWithBrends.json');
-    await writeFileAsync(allBrends, 'allBrends.json');
-    await writeFileAsync(allCat, 'allCat.json');
-    await writeFileAsync(seasons, 'seasons.json');
+    // await writeFileAsync(result, `${name}.json`);
+    // await writeFileAsync(catWithBrends, 'catWithBrends.json');
+    // await writeFileAsync(allBrends, 'allBrends.json');
+    // await writeFileAsync(allCat, 'allCat.json');
+    // await writeFileAsync(seasons, 'seasons.json');
 
     console.log('scraping...');
 
     await delay(1000);
 
-    const i = startLoading();
+    // const i = startLoading();
+
+    const allParsedItemsFolder = fs.readdirSync('./src/data');
 
     // подгружаем экстрактор
     const { domain, host } = parseUrl(url.parse(uri));
@@ -83,7 +86,7 @@ const scrape = async (options = [], name) => {
 
     console.log(`Найдено страниц: ${countPages}`);
 
-    stopLoading(i);
+    // stopLoading(i);
 
     try {
         // цикл по всем страницам
@@ -96,7 +99,8 @@ const scrape = async (options = [], name) => {
 
                 // пропускаем брэнд распродажа
                 if (
-                    nazv.toUpperCase() !== 'РАСПРОДАЖА'
+                    nazv.toUpperCase() !== 'РАСПРОДАЖА' &&
+                    !allParsedItemsFolder.includes(id)
                     // !nazv.includes('Elpaiz') ||
                     // !nazv.includes('LaVela') ||
                     // !nazv.includes('Леди Стиль Классик')
