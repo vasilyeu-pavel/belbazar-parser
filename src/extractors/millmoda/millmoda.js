@@ -2,8 +2,9 @@ const moment = require('moment');
 const fetch = require('node-fetch');
 
 const fs = require('fs');
+const path = require('path');
 
-const { getAllParsedItemPath, readFileAsync } = require('../../utils/fileAPI');
+const { getAllParsedItemPath, readFileAsync, writeFileAsync } = require('../../utils/fileAPI');
 
 const { creds, selectors } = require('./data');
 
@@ -13,12 +14,26 @@ const { delay } = require('../../utils/utils');
 
 const {
     createImg,
-    getRazmeri,
-    getHeight
+    getSize,
+    getHeight,
+    getCatId,
+    getBrandId,
 } = require('./helpers');
 
 const parser = async () => {
     const url = 'https://millmoda.ru/admin/login';
+
+    const filepath = path.join(path.resolve(), 'src', 'data', 'wasSend.json');
+
+    // если файл не создал - создать
+    if (!fs.existsSync(filepath)) {
+        await writeFileAsync([], 'wasSend.json');
+    }
+
+    // читаем отправленные ids
+    const wasLastSendItems = await readFileAsync(`wasSend.json`);
+
+    const wasSend = [...wasLastSendItems];
 
     const browser = await getBrowser();
     const page = await getPage(browser, url);
@@ -37,7 +52,14 @@ const parser = async () => {
     for await (const { id, path } of allParsedItems) {
         // получаем json файл в папке с товаром
         const itemInfo = await readFileAsync(`${id}/${id}.json`);
-        if (Object.keys(itemInfo).length) {
+        if (
+            Object.keys(itemInfo).length &&
+            itemInfo.brend &&
+            // пропустить уже отправленные
+            !wasSend.includes(id) &&
+            getCatId(itemInfo.cat_nazv) &&
+            getBrandId(itemInfo.brend.nazv || '')
+        ) {
             // получить все пути к картинкам в товаре
             const allImgPath = fs.readdirSync(path)
                 .filter((file) => file.includes('.jpg'))
@@ -49,7 +71,10 @@ const parser = async () => {
                 if (html.includes('Вход в систему')) {
                     console.log(`Не отправлен запрос на создание ${id}`);
                 } else {
-                    console.log(`Отправле запрос на создание ${id}`)
+                    console.log(`Отправле запрос на создание ${id}`);
+                    wasSend.push(id);
+
+                    await writeFileAsync(wasSend, 'wasSend.json');
                 }
             } catch (e) {
                 console.log(e);
@@ -65,7 +90,7 @@ const parser = async () => {
 
 // todo разобраться категориями и брэндами и сезоны
 const createThing = async ({ cookie, itemInfo, allImgPath }) => {
-    const { price_zakupka, text, sostav, size_list, height, indexid, itemNazv } = itemInfo;
+    const { price_zakupka, text, sostav, size_list, height, indexid, itemNazv, cat_nazv, brend } = itemInfo;
 
     const url = 'https://millmoda.ru/admin/catalog/add/item?page=1';
 
@@ -108,13 +133,13 @@ const createThing = async ({ cookie, itemInfo, allImgPath }) => {
             script=add&
             name%5Bru%5D=${itemNazv}&
             sku=${indexid}&
-            category=89&
-            brand=191&
+            category=${getCatId(cat_nazv)}& 
+            brand=${getBrandId(brend.nazv)}&
             short_desc%5Bru%5D%5B1%5D=${sostav}&
             desc%5Bru%5D%5B1%5D=${text}&
             price%5B1%5D=${price_zakupka}&
             price%5B2%5D=&
-            ${getRazmeri(size_list)}
+            ${getSize(size_list)}
             ${getHeight(`${height}`)}
             ${photoIds}
             skin=item-new&
