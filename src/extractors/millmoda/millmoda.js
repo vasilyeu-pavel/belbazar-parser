@@ -17,6 +17,7 @@ const {
     getSize,
     getHeight,
     getCatId,
+    getBrandId,
 } = require('./helpers');
 
 const parser = async () => {
@@ -52,10 +53,12 @@ const parser = async () => {
         // получаем json файл в папке с товаром
         const itemInfo = await readFileAsync(`${id}/${id}.json`);
         if (
-            Object.keys(itemInfo).length ||
+            Object.keys(itemInfo).length &&
+            itemInfo.brend &&
             // пропустить уже отправленные
-            !wasSend.includes(id)
-            || getCatId(itemInfo.cat_nazv)
+            !wasSend.includes(id) &&
+            getCatId(itemInfo.cat_nazv) &&
+            getBrandId(itemInfo.brend.nazv || '')
         ) {
             // получить все пути к картинкам в товаре
             const allImgPath = fs.readdirSync(path)
@@ -87,7 +90,7 @@ const parser = async () => {
 
 // todo разобраться категориями и брэндами и сезоны
 const createThing = async ({ cookie, itemInfo, allImgPath }) => {
-    const { price_zakupka, text, sostav, size_list, height, indexid, itemNazv, cat_nazv } = itemInfo;
+    const { price_zakupka, text, sostav, size_list, height, indexid, itemNazv, cat_nazv, brend } = itemInfo;
 
     const url = 'https://millmoda.ru/admin/catalog/add/item?page=1';
 
@@ -131,7 +134,7 @@ const createThing = async ({ cookie, itemInfo, allImgPath }) => {
             name%5Bru%5D=${itemNazv}&
             sku=${indexid}&
             category=${getCatId(cat_nazv)}& 
-            brand=191&   // todo мне сюда надо id вставить брэнда
+            brand=${getBrandId(brend.nazv)}&
             short_desc%5Bru%5D%5B1%5D=${sostav}&
             desc%5Bru%5D%5B1%5D=${text}&
             price%5B1%5D=${price_zakupka}&
