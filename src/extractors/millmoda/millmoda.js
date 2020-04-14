@@ -90,21 +90,38 @@ const parser = async () => {
 
 // todo разобраться категориями и брэндами и сезоны
 const createThing = async ({ cookie, itemInfo, allImgPath }) => {
-    const { price_zakupka, text, sostav, size_list, height, indexid, itemNazv, cat_nazv, brend } = itemInfo;
+    const { price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul } = itemInfo;
 
     const url = 'https://millmoda.ru/admin/catalog/add/item?page=1';
 
     const dateNow = moment().format('DD.MM.YYYY');
 
     // залить все картинки
-    const imgs = await Promise.all(allImgPath.map((filename) =>
-        createImg({
+    // const imgs = await Promise.all(allImgPath.map((filename) =>
+    //     createImg({
+    //         cookie,
+    //         filename,
+    //         add_date: dateNow,
+    //         sku: indexid,
+    //     }))
+    // );
+
+    const imgs = [];
+
+    for (const filename of allImgPath) {
+        const img = await createImg({
             cookie,
             filename,
             add_date: dateNow,
             sku: indexid,
-        }))
-    );
+        });
+
+        imgs.push(img);
+
+        console.log('photo_response:', img);
+
+        await delay(1000);
+    }
 
     let photoIds = '';
 
@@ -117,8 +134,6 @@ const createThing = async ({ cookie, itemInfo, allImgPath }) => {
                 photoIds += `${decodeURI('photo_id[]')}=${fileId}&`
             }
         });
-
-        console.log('imgResponse:', files);
     });
 
     // сохранить шмот
@@ -128,10 +143,9 @@ const createThing = async ({ cookie, itemInfo, allImgPath }) => {
                 Cookie: cookie,
                 'content-type': 'application/x-www-form-urlencoded',
             },
-
             body:`
             script=add&
-            name%5Bru%5D=${itemNazv}&
+            name%5Bru%5D=${articul || ''}&
             sku=${indexid}&
             category=${getCatId(cat_nazv)}& 
             brand=${getBrandId(brend.nazv)}&
@@ -142,6 +156,7 @@ const createThing = async ({ cookie, itemInfo, allImgPath }) => {
             ${getSize(size_list)}
             ${getHeight(`${height}`)}
             ${photoIds}
+            avail=1&
             skin=item-new&
             add_date=${dateNow}&
             files%5B%5D=&
