@@ -97,14 +97,31 @@ const createThing = async ({ cookie, itemInfo, allImgPath }) => {
     const dateNow = moment().format('DD.MM.YYYY');
 
     // залить все картинки
-    const imgs = await Promise.all(allImgPath.map((filename) =>
-        createImg({
+    // const imgs = await Promise.all(allImgPath.map((filename) =>
+    //     createImg({
+    //         cookie,
+    //         filename,
+    //         add_date: dateNow,
+    //         sku: indexid,
+    //     }))
+    // );
+
+    const imgs = [];
+
+    for (const filename of allImgPath) {
+        const img = await createImg({
             cookie,
             filename,
             add_date: dateNow,
             sku: indexid,
-        }))
-    );
+        });
+
+        imgs.push(img);
+
+        console.log('photo_response:', img);
+
+        await delay(1000);
+    }
 
     let photoIds = '';
 
@@ -117,8 +134,6 @@ const createThing = async ({ cookie, itemInfo, allImgPath }) => {
                 photoIds += `${decodeURI('photo_id[]')}=${fileId}&`
             }
         });
-
-        console.log('imgResponse:', files);
     });
 
     // сохранить шмот
