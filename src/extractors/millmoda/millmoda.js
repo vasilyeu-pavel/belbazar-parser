@@ -128,7 +128,6 @@ const createThing = async ({ cookie, itemInfo, allImgPath }) => {
                 Cookie: cookie,
                 'content-type': 'application/x-www-form-urlencoded',
             },
-
             body:`
             script=add&
             name%5Bru%5D=${itemNazv}&
@@ -142,6 +141,7 @@ const createThing = async ({ cookie, itemInfo, allImgPath }) => {
             ${getSize(size_list)}
             ${getHeight(`${height}`)}
             ${photoIds}
+            avail=1&
             skin=item-new&
             add_date=${dateNow}&
             files%5B%5D=&
