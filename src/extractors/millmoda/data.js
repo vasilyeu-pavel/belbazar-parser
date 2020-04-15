@@ -6,8 +6,8 @@ const selectors = {
 
 // todo заполнить креды
 const creds = {
-    login: 'millmoda@mail.ru',
-    pass: 'RnthGHT',
+    login: '',
+    pass: '',
 };
 
 module.exports = {
