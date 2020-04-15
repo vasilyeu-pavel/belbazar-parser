@@ -15,21 +15,26 @@ const run = async () => {
         case 'Отчистить папку data': {
             return await remove();
         }
+        case 'Спарсить изменения за последние 2 дня': {
+            const { parser } = require(`./src/extractors/belbazar24/belbazar24.js`);
+
+            return await parser([], 2);
+        }
         case 'За все время': {
             const { parser } = require(`./src/extractors/belbazar24/belbazar24.js`);
 
-            return await parser([], 'all');
+            return await parser([]);
         }
         case 'За неделю': {
             const { parser } = require(`./src/extractors/belbazar24/belbazar24.js`);
 
-            return await parser(['7day'], 'week');
+            return await parser(['7day']);
         }
         case 'За 48 часов': {
             const { parser } = require(`./src/extractors/belbazar24/belbazar24.js`);
 
 
-            return await parser(['2day'], 'days');
+            return await parser(['2day']);
         }
         case 'Закинуть на millmoda': {
             const { parser } = require(`./src/extractors/millmoda/millmoda.js`);

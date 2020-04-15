@@ -4,9 +4,12 @@ const selectMode = async () => {
     const questions = [
         {
             type: 'list',
-            message: 'Выбрать период :) ?',
+            message: 'Что делаем :) ?',
             name: 'choice',
             choices: [
+                {
+                    name: 'Спарсить изменения за последние 2 дня'
+                },
                 {
                     name: 'За все время'
                 },

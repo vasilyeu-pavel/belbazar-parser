@@ -35,6 +35,7 @@ const filterByNeedFields = (list, host) => list.map(({
     search = '',
     gallery = '',
     nazv: itemNazv = '',
+    date_edit,
 }) => {
     const { nazv, indexid: brendId, url, infotext } = brend;
     const options = getHeightAndSeason(search);
@@ -58,6 +59,7 @@ const filterByNeedFields = (list, host) => list.map(({
         height,
         itemNazv,
         season,
+        date_edit,
         brend: {
             nazv, brendId, url, infotext
         }

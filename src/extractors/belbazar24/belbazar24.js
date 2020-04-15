@@ -1,6 +1,7 @@
 const url = require('url');
 const path = require('path');
 const mkdirp = require('mkdirp');
+const moment = require('moment');
 
 const { getCookieFromPage, request } = require('./helpers');
 
@@ -15,7 +16,7 @@ const { startLoading, stopLoading } = require('../../utils/loading');
 // file apis
 const { writeFileAsync, download } = require('../../utils/fileAPI');
 
-const parser = async (options = []) => {
+const parser = async (options = [], dayAgo = null) => {
     console.time('scraping');
 
     console.log('scraping...');
@@ -42,32 +43,42 @@ const parser = async (options = []) => {
         for await (const page of requests) {
             const { list } = await request({ cookie, host, page, options });
 
-            // цикл по всем вещам в списке
-            for await (const item of list) {
-                const { indexid: id, pictures, brend: { nazv = '' } } = item;
+            const filteredList = list
+                .filter(({ date_edit }) => {
+                    if (!dayAgo) return true;
 
+                    const dateAgo = moment().subtract(dayAgo, 'days');
+
+                    const dateEdit = moment(date_edit);
+
+                    return dateEdit >= dateAgo;
+                })
                 // пропускаем брэнд распродажа
-                if (nazv.toUpperCase() !== 'РАСПРОДАЖА') {
+                .filter(({ brend: { nazv = '' } }) => nazv.toUpperCase() !== 'РАСПРОДАЖА');
 
-                    const folderPath = path.join(path.resolve(), 'src', 'data');
-                    await mkdirp(path.join(folderPath, id));
 
-                    // скачать все картинки параллельно
-                    await Promise.all(pictures.map((picture, i) =>
-                        download(picture, id, `${id}_${i + 1}`))
-                    );
+            // цикл по всем вещам в списке
+            for await (const item of filteredList) {
+                const { indexid: id, pictures } = item;
 
-                    await delay(1000);
+                const folderPath = path.join(path.resolve(), 'src', 'data');
+                await mkdirp(path.join(folderPath, id));
 
-                    try {
-                        // сохраняем отдельно для каждой шмотки инфу
-                        await writeFileAsync(item, `${id}/${id}.json`);
-                    } catch (e) {
-                        console.log(e);
-                    }
+                // скачать все картинки параллельно
+                await Promise.all(pictures.map((picture, i) =>
+                    download(picture, id, `${id}_${i + 1}`))
+                );
 
-                    console.log(item);
+                await delay(1000);
+
+                try {
+                    // сохраняем отдельно для каждой шмотки инфу
+                    await writeFileAsync(item, `${id}/${id}.json`);
+                } catch (e) {
+                    console.log(e);
                 }
+
+                console.log(item);
             }
 
             console.log(`Was parsed page: ${page}`);
