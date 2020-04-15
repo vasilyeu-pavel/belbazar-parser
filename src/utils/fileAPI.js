@@ -74,7 +74,6 @@ const writeFileAsync = (data, fileName) => new Promise(resolve => {
 
     fs.writeFile(filepath, JSON.stringify(data), (err) => {
         if (err) throw err;
-        console.log(`Was saved ${data.length} items`);
         console.log(`The file ${fileName} has been saved!`);
         resolve();
     });

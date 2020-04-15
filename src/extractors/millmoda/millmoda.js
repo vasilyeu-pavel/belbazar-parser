@@ -1,10 +1,8 @@
 const moment = require('moment');
 const fetch = require('node-fetch');
-
 const fs = require('fs');
-const path = require('path');
 
-const { getAllParsedItemPath, readFileAsync, writeFileAsync } = require('../../utils/fileAPI');
+const { getAllParsedItemPath, readFileAsync } = require('../../utils/fileAPI');
 
 const { creds, selectors } = require('./data');
 
@@ -18,22 +16,11 @@ const {
     getHeight,
     getCatId,
     getBrandId,
+    checkIsItemIsCreated,
 } = require('./helpers');
 
 const parser = async () => {
     const url = 'https://millmoda.ru/admin/login';
-
-    const filepath = path.join(path.resolve(), 'src', 'data', 'wasSend.json');
-
-    // если файл не создал - создать
-    if (!fs.existsSync(filepath)) {
-        await writeFileAsync([], 'wasSend.json');
-    }
-
-    // читаем отправленные ids
-    const wasLastSendItems = await readFileAsync(`wasSend.json`);
-
-    const wasSend = [...wasLastSendItems];
 
     const browser = await getBrowser();
     const page = await getPage(browser, url);
@@ -52,11 +39,10 @@ const parser = async () => {
     for await (const { id, path } of allParsedItems) {
         // получаем json файл в папке с товаром
         const itemInfo = await readFileAsync(`${id}/${id}.json`);
+
         if (
             Object.keys(itemInfo).length &&
             itemInfo.brend &&
-            // пропустить уже отправленные
-            !wasSend.includes(id) &&
             getCatId(itemInfo.cat_nazv) &&
             getBrandId(itemInfo.brend.nazv || '')
         ) {
@@ -65,21 +51,50 @@ const parser = async () => {
                 .filter((file) => file.includes('.jpg'))
                 .map(file => `${path}/${file}`);
 
+            console.log('<===========Информация о товаре===============>');
+            console.log(itemInfo);
+            console.log('<=============================================>');
+
             try {
-                const html = await createThing({ cookie: parsedCookie, itemInfo, allImgPath });
+                const createdId = await checkIsItemIsCreated({ cookie: parsedCookie, itemInfo });
 
-                if (html.includes('Вход в систему')) {
-                    console.log(`Не отправлен запрос на создание ${id}`);
+                if (!createdId) {
+                    // создать
+                    console.log(`Создаем ${itemInfo.indexid}`);
+                    const html = await createThing({
+                        cookie: parsedCookie,
+                        itemInfo,
+                        allImgPath,
+                        isAddMode: true,
+                    });
+
+                    if (html.includes('Вход в систему')) {
+                        console.log(`Не отправлен запрос на создание ${id}`);
+                        console.log('Умер токен, нужно перезапустить скрипт');
+                    } else {
+                        console.log('<===========Статус===============>');
+                        console.log(`Товар успешно создан ${id}`);
+                        console.log('<================================>');
+                    }
                 } else {
-                    console.log(`Отправле запрос на создание ${id}`);
-                    wasSend.push(id);
+                    // обновить
+                    console.log(`Обновляем ${createdId} (${itemInfo.indexid})`);
+                    await createThing({
+                        cookie: parsedCookie,
+                        itemInfo,
+                        allImgPath,
+                        isAddMode: false,
+                        createdId
+                    });
 
-                    await writeFileAsync(wasSend, 'wasSend.json');
+                    console.log('<===========Статус===============>');
+                    console.log(`Товар успешно обновлен ${createdId}`);
+                    console.log('<================================>');
                 }
-            } catch (e) {
-                console.log(e);
-            }
 
+            } catch (e) {
+              console.log(e)
+            }
         }
     }
 
@@ -88,41 +103,49 @@ const parser = async () => {
     await browser.close();
 };
 
-const createThing = async ({ cookie, itemInfo, allImgPath, isParallel = true }) => {
+const createThing = async ({
+   cookie,
+   itemInfo,
+   allImgPath,
+   isParallel = true,
+   isAddMode = false,
+   createdId = null
+}) => {
     const { price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul } = itemInfo;
-
-    const url = 'https://millmoda.ru/admin/catalog/add/item?page=1';
 
     const dateNow = moment().format('DD.MM.YYYY');
 
     const imgs = [];
 
-    // залить все картинки
-    if (isParallel) {
-        const createdImgs = await Promise.all(allImgPath.map((filename) =>
-            createImg({
-                cookie,
-                filename,
-                add_date: dateNow,
-                sku: indexid,
-            })));
+    // фотки создавать только при создании
+    if (isAddMode) {
+        // залить все картинки
+        if (isParallel) {
+            const createdImgs = await Promise.all(allImgPath.map((filename) =>
+                createImg({
+                    cookie,
+                    filename,
+                    add_date: dateNow,
+                    sku: indexid,
+                })));
 
-        imgs.push(...createdImgs);
+            imgs.push(...createdImgs);
 
-    } else {
-        for (const filename of allImgPath) {
-            const img = await createImg({
-                cookie,
-                filename,
-                add_date: dateNow,
-                sku: indexid,
-            });
+        } else {
+            for (const filename of allImgPath) {
+                const img = await createImg({
+                    cookie,
+                    filename,
+                    add_date: dateNow,
+                    sku: indexid,
+                });
 
-            imgs.push(img);
+                imgs.push(img);
 
-            console.log('photo_response:', img);
+                console.log('photo_response:', img);
 
-            await delay(1000);
+                await delay(1000);
+            }
         }
     }
 
@@ -141,6 +164,11 @@ const createThing = async ({ cookie, itemInfo, allImgPath, isParallel = true }) 
         });
     });
 
+    const addUrl = 'https://millmoda.ru/admin/catalog/add/item?page=1';
+    const editUrl = `https://millmoda.ru/admin/catalog/edit/item/${createdId}?page=1`;
+
+    const url = isAddMode ? addUrl : editUrl;
+
     // сохранить шмот
     const response = await fetch(url,
         {
@@ -149,7 +177,7 @@ const createThing = async ({ cookie, itemInfo, allImgPath, isParallel = true }) 
                 'content-type': 'application/x-www-form-urlencoded',
             },
             body:`
-            script=add&
+            script=${isAddMode ? 'add' : 'edit'}&
             name%5Bru%5D=${articul || ''}&
             sku=${indexid}&
             category=${getCatId(cat_nazv)}& 
