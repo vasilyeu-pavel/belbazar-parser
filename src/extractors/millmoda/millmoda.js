@@ -88,42 +88,47 @@ const parser = async () => {
     await browser.close();
 };
 
-// todo разобраться категориями и брэндами и сезоны
-const createThing = async ({ cookie, itemInfo, allImgPath }) => {
+const createThing = async ({ cookie, itemInfo, allImgPath, isParallel = true }) => {
     const { price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul } = itemInfo;
 
     const url = 'https://millmoda.ru/admin/catalog/add/item?page=1';
 
     const dateNow = moment().format('DD.MM.YYYY');
 
-    // залить все картинки
-    // const imgs = await Promise.all(allImgPath.map((filename) =>
-    //     createImg({
-    //         cookie,
-    //         filename,
-    //         add_date: dateNow,
-    //         sku: indexid,
-    //     }))
-    // );
-
     const imgs = [];
 
-    for (const filename of allImgPath) {
-        const img = await createImg({
-            cookie,
-            filename,
-            add_date: dateNow,
-            sku: indexid,
-        });
+    // залить все картинки
+    if (isParallel) {
+        const createdImgs = await Promise.all(allImgPath.map((filename) =>
+            createImg({
+                cookie,
+                filename,
+                add_date: dateNow,
+                sku: indexid,
+            })));
 
-        imgs.push(img);
+        imgs.push(...createdImgs);
 
-        console.log('photo_response:', img);
+    } else {
+        for (const filename of allImgPath) {
+            const img = await createImg({
+                cookie,
+                filename,
+                add_date: dateNow,
+                sku: indexid,
+            });
 
-        await delay(1000);
+            imgs.push(img);
+
+            console.log('photo_response:', img);
+
+            await delay(1000);
+        }
     }
 
     let photoIds = '';
+
+    if (!imgs) return '';
 
     // прикрепить id картинки к шмоту
     imgs.forEach(img => {
