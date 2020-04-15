@@ -20,6 +20,9 @@ const selectMode = async () => {
                     name: 'Закинуть на millmoda'
                 },
                 {
+                    name: 'Отчистить папку data'
+                },
+                {
                     name: 'Выход!'
                 }
             ]
