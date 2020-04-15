@@ -39,9 +39,7 @@ const filterByNeedFields = (list, host) => list.map(({
     const { nazv, indexid: brendId, url, infotext } = brend;
     const options = getHeightAndSeason(search);
 
-    console.log(options);
-
-    const [{ height, season }] = options && options.length ? options : [{ season: '', height: '' }];;
+    const [{ height, season }] = options && options.length ? options : [{ season: '', height: '' }];
 
     const parsedText = htmlToText.fromString(text).replace(/\n/g,'');
 
