@@ -12,6 +12,9 @@ const startLoading = () => {
 
 const stopLoading = (interval) => clearInterval(interval);
 
+// const i = startLoading();
+// stopLoading(i);
+
 module.exports = {
     stopLoading,
     startLoading,

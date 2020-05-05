@@ -38,15 +38,21 @@ const createImg = async ({ filename, cookie, name = 'test', category = 89, brand
 
     const form = getFormData(data);
 
-    const res = await fetch(url, {
-        headers:{
-            Cookie: cookie,
-        },
-        body:form,
-        method: 'POST',
-    });
+    try {
+        const res = await fetch(url, {
+            headers: {
+                Cookie: cookie,
+            },
+            body: form,
+            method: 'POST',
+        });
 
-    return await res.text();
+        return await res.text();
+    } catch (e) {
+        console.log('error in createImg');
+        console.log(e);
+        throw new Error(e);
+    }
 };
 
 const getCatId = cat => cats[cat] || null;
@@ -86,7 +92,7 @@ const getHeight = (heights) => {
     return str;
 };
 
-const checkIsItemIsCreated = async ({ cookie, itemInfo }) => {
+const checkIsItemIsCreatedFromAdmin = async ({ cookie, itemInfo }) => {
     if (!itemInfo.articul) {
         throw new Error(`Отсутствует поле articul в ${itemInfo.indexid}`);
     }
@@ -136,11 +142,67 @@ const checkIsItemIsCreated = async ({ cookie, itemInfo }) => {
     return null;
 };
 
+const checkIsItemIsCreatedFromRequest = async ({ itemInfo: { indexid } }) => {
+    const url = `https://millmoda.ru/export/json?sku=${indexid}`;
+
+    const res = await fetch(url);
+
+    const response = await res.json();
+
+    console.log(`На милмоде не найдено товара по id ${indexid} белбазара`);
+
+    if (!response && response.id) return {
+        createdId: null,
+        images: [],
+    };
+
+    console.log(`Инфа товара с милмоды по id ${indexid} белбазара`);
+    console.log(response);
+
+    return {
+        ...response,
+        createdId: response.id
+    }
+};
+
+const removeImg = async ({ cookie, photoId }) => {
+    const url = 'https://millmoda.ru/admin/catalog/ajax/item';
+
+    const data = [
+        {
+            type: 'delphoto',
+        },
+        {
+            photo: photoId,
+        },
+    ];
+
+    const form = getFormData(data);
+
+    try {
+        const res = await fetch(url, {
+            headers: {
+                Cookie: cookie,
+            },
+            body: form,
+            method: 'POST',
+        });
+
+        const t = await res.text();
+        console.log(`фотка ${photoId} удалена успешно`);
+    } catch (e) {
+        console.log('error in delete img');
+        console.log(e);
+        throw new Error(e);
+    }
+};
+
 module.exports = {
     createImg,
     getSize,
     getHeight,
     getCatId,
     getBrandId,
-    checkIsItemIsCreated,
+    checkIsItemIsCreatedFromRequest,
+    removeImg,
 };

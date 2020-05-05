@@ -3,45 +3,83 @@ const path = require('path');
 const mkdirp = require('mkdirp');
 const moment = require('moment');
 
-const { getCookieFromPage, request } = require('./helpers');
+const { getCookieFromPage, request, getBrandsList, selectBrand } = require('./helpers');
 
 const { uri } = require('./data');
 
 // utils
 const { delay, getRequestsCounts, parseUrl } = require('../../utils/utils');
 
-// loading
-const { startLoading, stopLoading } = require('../../utils/loading');
-
 // file apis
 const { writeFileAsync, download } = require('../../utils/fileAPI');
 
-const parser = async (options = [], dayAgo = null) => {
+// questions
+const { selectMode } = require('../../utils/questions');
+
+const parser = async (options = [], dayAgo = null, byBrand = false) => {
     console.time('scraping');
 
     console.log('scraping...');
 
     await delay(1000);
 
-    const i = startLoading();
-
     // подгружаем экстрактор
     const { host } = parseUrl(url.parse(uri));
-    // вытягиваем куки с сайта
-    const cookie = await getCookieFromPage(uri);
 
-    // запрашиваем список
-    const { countPages } = await request({ cookie, host, options });
-    const requests = getRequestsCounts(countPages);
+    let requests = null;
+    let cookie = null;
 
-    console.log(`Найдено страниц: ${countPages}`);
+    let requestConfig = {};
 
-    stopLoading(i);
+    if (byBrand) {
+        ////////////////////////////////////////////  brands   ///////////////////////////////////////////////////
+        const brands = await getBrandsList(uri);
+
+        if (!brands || !brands.length) {
+            throw new Error('Не спарсились названия брэндов. Запустите заного.')
+        }
+
+        const { choice } = await selectMode('Выберите брэнд', brands);
+
+        const choisedBrand = brands.find((b) => b.name === choice);
+
+        console.log(`Парсим по брэнд ${JSON.stringify(choisedBrand)}`);
+
+        if (!choisedBrand || !choisedBrand.id) {
+            throw new Error('Не спарсились названия брэндов. Запустите заного.')
+        }
+        // вытягиваем куки с сайта
+        cookie = await selectBrand(uri, choisedBrand.id);
+
+        requestConfig = {
+            cookie,
+            host,
+            options,
+            [`1[${choisedBrand.id}]`]: choisedBrand.id,
+        };
+
+        // запрашиваем список
+        const { countPages } = await request(requestConfig);
+        requests = getRequestsCounts(countPages);
+
+        console.log(`Найдено страниц: ${countPages}`);
+    } else {
+        ////////////////////////////////////////    all   //////////////////////////////////////////////////////
+        // вытягиваем куки с сайта
+        cookie = await getCookieFromPage(uri);
+        // запрашиваем список
+        requestConfig = { cookie, host, options };
+
+        const { countPages } = await request(requestConfig);
+        requests = getRequestsCounts(countPages);
+
+        console.log(`Найдено страниц: ${countPages}`);
+    }
 
     try {
         // цикл по всем страницам
         for await (const page of requests) {
-            const { list } = await request({ cookie, host, page, options });
+            const { list } = await request(requestConfig);
 
             const filteredList = list
                 .filter(({ date_edit }) => {
@@ -55,7 +93,6 @@ const parser = async (options = [], dayAgo = null) => {
                 })
                 // пропускаем брэнд распродажа
                 .filter(({ brend: { nazv = '' } }) => nazv.toUpperCase() !== 'РАСПРОДАЖА');
-
 
             // цикл по всем вещам в списке
             for await (const item of filteredList) {
@@ -78,7 +115,7 @@ const parser = async (options = [], dayAgo = null) => {
                     console.log(e);
                 }
 
-                console.log(item);
+                console.log(JSON.stringify(item, null, 4));
             }
 
             console.log(`Was parsed page: ${page}`);

@@ -108,13 +108,13 @@ const cookiesParser = (cookies, targetName) => {
     return str.trim();
 };
 
-const getBrowser = (hide = true) => puppeteer.launch({
+const getBrowser = (hide = true, devtools) => puppeteer.launch({
     args: [
         '--no-sandbox',
         '--window-size=1920,1170','--window-position=0,0',
     ],
     defaultViewport:null,
-    devtools: true,
+    devtools: devtools,
     headless: hide // -------> for show browser
 });
 

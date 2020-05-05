@@ -16,7 +16,8 @@ const {
     getHeight,
     getCatId,
     getBrandId,
-    checkIsItemIsCreated,
+    checkIsItemIsCreatedFromRequest,
+    removeImg,
 } = require('./helpers');
 
 const parser = async () => {
@@ -56,7 +57,7 @@ const parser = async () => {
             console.log('<=============================================>');
 
             try {
-                const createdId = await checkIsItemIsCreated({ cookie: parsedCookie, itemInfo });
+                const { createdId, images } = await checkIsItemIsCreatedFromRequest({ itemInfo });
 
                 if (!createdId) {
                     // создать
@@ -73,10 +74,16 @@ const parser = async () => {
                         console.log('Умер токен, нужно перезапустить скрипт');
                     } else {
                         console.log('<===========Статус===============>');
-                        console.log(`Товар успешно создан ${id}`);
+                           console.log(`Товар успешно создан ${id}`);
                         console.log('<================================>');
                     }
                 } else {
+                    //удалить все фотки
+                    if (images && images.length) {
+                        await Promise.all(images.map(img =>
+                            img.id && removeImg({ cookie: parsedCookie, photoId: img.id })
+                        ))
+                    }
                     // обновить
                     console.log(`Обновляем ${createdId} (${itemInfo.indexid})`);
                     await createThing({
@@ -107,7 +114,7 @@ const createThing = async ({
    cookie,
    itemInfo,
    allImgPath,
-   isParallel = true,
+   isParallel = false,
    isAddMode = false,
    createdId = null
 }) => {
@@ -117,8 +124,8 @@ const createThing = async ({
 
     const imgs = [];
 
-    // фотки создавать только при создании
-    if (isAddMode) {
+    try {
+        // фотки создавать только при создании
         // залить все картинки
         if (isParallel) {
             const createdImgs = await Promise.all(allImgPath.map((filename) =>
@@ -130,7 +137,6 @@ const createThing = async ({
                 })));
 
             imgs.push(...createdImgs);
-
         } else {
             for (const filename of allImgPath) {
                 const img = await createImg({
@@ -140,29 +146,41 @@ const createThing = async ({
                     sku: indexid,
                 });
 
-                imgs.push(img);
+                try {
+                    imgs.push(JSON.parse(img));
+                    console.log('photo_response:', img);
 
-                console.log('photo_response:', img);
+                    await delay(1000);
+                } catch (e) {
+                    console.log(`img response is not object', ${filename}`);
+                }
 
-                await delay(1000);
             }
         }
+
+    } catch (e) {
+        console.log('error in createImg');
+        console.log(e);
+        throw new Error(e);
     }
 
     let photoIds = '';
 
     if (!imgs) return '';
 
-    // прикрепить id картинки к шмоту
-    imgs.forEach(img => {
-        const { files } = JSON.parse(img);
-
-        Object.keys(files).forEach(fileId => {
-            if (fileId && fileId.length) {
-                photoIds += `${decodeURI('photo_id[]')}=${fileId}&`
-            }
+    try {
+        // прикрепить id картинки к шмоту
+        imgs.forEach(({ files }) => {
+            Object.keys(files).forEach(fileId => {
+                if (fileId && fileId.length) {
+                    photoIds += `${decodeURI('photo_id[]')}=${fileId}&`
+                }
+            });
         });
-    });
+    } catch (e) {
+        console.log('ошибка в прикрепление id картинки к шмоту');
+        console.log(e);
+    }
 
     const addUrl = 'https://millmoda.ru/admin/catalog/add/item?page=1';
     const editUrl = `https://millmoda.ru/admin/catalog/edit/item/${createdId}?page=1`;

@@ -6,6 +6,7 @@ const getFiltersData = (props) => {
         cat_id = 180,
         page = 1,
         dateObj = new Date().toString(),
+        catFilter,
     } = props;
 
     const result = [
@@ -28,6 +29,12 @@ const getFiltersData = (props) => {
             dateObj,
         },
     ];
+
+    console.log(catFilter);
+
+    if (catFilter) {
+        result.push(catFilter)
+    }
 
     if (props['7day']) {
         result.push({ '7day': 'yes' })

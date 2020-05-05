@@ -15,6 +15,12 @@ const run = async () => {
         case 'Отчистить папку data': {
             return await remove();
         }
+        case 'Спарсить по брэнду': {
+            const { parser } = require(`./src/extractors/belbazar24/belbazar24.js`);
+
+
+            return await parser([], null, true);
+        }
         case 'Спарсить изменения за последние 2 дня': {
             const { parser } = require(`./src/extractors/belbazar24/belbazar24.js`);
 
