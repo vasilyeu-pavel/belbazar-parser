@@ -1,4 +1,6 @@
 const { remove } = require('./src/utils/fileAPI');
+const { parser: belBazarParser } = require(`./src/extractors/belbazar24/belbazar24.js`);
+const { parser: millModaParser } = require(`./src/extractors/millmoda/millmoda.js`);
 
 const { printHeader } = require('./src/utils/printHeader');
 
@@ -16,36 +18,22 @@ const run = async () => {
             return await remove();
         }
         case 'Спарсить по брэнду': {
-            const { parser } = require(`./src/extractors/belbazar24/belbazar24.js`);
-
-
-            return await parser([], null, true);
+            return await belBazarParser([], null, true);
         }
         case 'Спарсить изменения за последние 2 дня': {
-            const { parser } = require(`./src/extractors/belbazar24/belbazar24.js`);
-
-            return await parser([], 2);
+            return await belBazarParser([], 2);
         }
         case 'За все время': {
-            const { parser } = require(`./src/extractors/belbazar24/belbazar24.js`);
-
-            return await parser([]);
+            return await belBazarParser([]);
         }
         case 'За неделю': {
-            const { parser } = require(`./src/extractors/belbazar24/belbazar24.js`);
-
-            return await parser(['7day']);
+            return await belBazarParser(['7day']);
         }
         case 'За 48 часов': {
-            const { parser } = require(`./src/extractors/belbazar24/belbazar24.js`);
-
-
-            return await parser(['2day']);
+            return await belBazarParser(['2day']);
         }
         case 'Закинуть на millmoda': {
-            const { parser } = require(`./src/extractors/millmoda/millmoda.js`);
-
-            return await parser();
+            return await millModaParser();
         }
     }
 };
