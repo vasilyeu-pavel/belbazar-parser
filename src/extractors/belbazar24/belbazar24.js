@@ -115,7 +115,7 @@ const parser = async (options = [], dayAgo = null, byBrand = false) => {
                     console.log(e);
                 }
 
-                // console.log(JSON.stringify(item, null, 4));
+                console.log(JSON.stringify(item, null, 4));
             }
 
             console.log(`Was parsed page: ${page}`);

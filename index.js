@@ -33,7 +33,10 @@ const run = async () => {
             return await belBazarParser(['2day']);
         }
         case 'Закинуть на millmoda': {
-            return await millModaParser();
+            return await millModaParser({ withoutUpdatePrice: false });
+        }
+        case 'Закинуть на millmoda БЕЗ ИЗМЕНЕНИЯ ЦЕНЫ': {
+            return await millModaParser({ withoutUpdatePrice: true });
         }
     }
 };
