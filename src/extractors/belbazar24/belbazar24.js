@@ -79,7 +79,7 @@ const parser = async (options = [], dayAgo = null, byBrand = false) => {
     try {
         // цикл по всем страницам
         for await (const page of requests) {
-            const { list } = await request(requestConfig);
+            const { list } = await request({ ...requestConfig, page });
 
             const filteredList = list
                 .filter(({ date_edit }) => {

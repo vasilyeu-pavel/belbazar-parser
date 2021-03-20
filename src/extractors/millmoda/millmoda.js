@@ -20,7 +20,7 @@ const {
     removeImg,
 } = require('./helpers');
 
-const parser = async () => {
+const parser = async ({ withoutUpdatePrice }) => {
     const url = 'https://millmoda.ru/admin/login';
 
     const browser = await getBrowser();
@@ -57,7 +57,7 @@ const parser = async () => {
             console.log('<=============================================>');
 
             try {
-                const { createdId, images } = await checkIsItemIsCreatedFromRequest({ itemInfo });
+                const { createdId, images, price } = await checkIsItemIsCreatedFromRequest({ itemInfo });
 
                 if (!createdId) {
                     // создать
@@ -74,7 +74,7 @@ const parser = async () => {
                         console.log('Умер токен, нужно перезапустить скрипт');
                     } else {
                         console.log('<===========Статус===============>');
-                           console.log(`Товар успешно создан ${id}`);
+                        console.log(`Товар успешно создан ${id}`);
                         console.log('<================================>');
                     }
                 } else {
@@ -86,9 +86,22 @@ const parser = async () => {
                     }
                     // обновить
                     console.log(`Обновляем ${createdId} (${itemInfo.indexid})`);
+
+                    const priceZakupka =  withoutUpdatePrice ?
+                        price || itemInfo.price_zakupka
+                        : itemInfo.price_zakupka;
+
+                    console.log(
+                        withoutUpdatePrice ? "БЕРЕМ СТАРУЮ ЦЕНУ" : "БЕРЕМ НОВУЮ ЦЕНУ",
+                        priceZakupka
+                    );
+
                     await createThing({
                         cookie: parsedCookie,
-                        itemInfo,
+                        itemInfo: {
+                            ...itemInfo,
+                            price_zakupka: priceZakupka,
+                        },
                         allImgPath,
                         isAddMode: false,
                         createdId
