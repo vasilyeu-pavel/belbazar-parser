@@ -165,6 +165,26 @@ const checkIsItemIsCreatedFromRequest = async ({ itemInfo: { indexid } }) => {
     }
 };
 
+const getOldPrice  = async ({ id, sku, cookie }) => {
+    const oldPriceSelector = 'price[2]';
+    const url = `https://millmoda.ru/admin/catalog/edit/item/${id}?page=1&filter[search]=${sku}`;
+    const res = await fetch(url, {
+        headers: {
+            Cookie: cookie,
+        },
+        method: 'GET',
+    });
+    const response = await res.text();
+
+    const root = HTMLParser.parse(response);
+    const input = root.querySelector(`[name="${oldPriceSelector}"]`);
+    if (!input) return '';
+    const value = input.getAttribute('value');
+    console.log(`Старая цена - ${value}`);
+
+    return value
+};
+
 const removeImg = async ({ cookie, photoId }) => {
     const url = 'https://millmoda.ru/admin/catalog/ajax/item';
 
@@ -205,4 +225,5 @@ module.exports = {
     getBrandId,
     checkIsItemIsCreatedFromRequest,
     removeImg,
+    getOldPrice,
 };

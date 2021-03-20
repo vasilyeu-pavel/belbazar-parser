@@ -23,6 +23,9 @@ const choisesFromHomePage = [
         name: 'Закинуть на millmoda БЕЗ ИЗМЕНЕНИЯ ЦЕНЫ'
     },
     {
+        name: 'Закинуть на millmoda БЕЗ ИЗМЕНЕНИЯ ЦЕН (старая/новая)'
+    },
+    {
         name: 'Отчистить папку data'
     },
     {
