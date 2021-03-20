@@ -18,9 +18,10 @@ const {
     getBrandId,
     checkIsItemIsCreatedFromRequest,
     removeImg,
+    getOldPrice,
 } = require('./helpers');
 
-const parser = async ({ withoutUpdatePrice }) => {
+const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
     const url = 'https://millmoda.ru/admin/login';
 
     const browser = await getBrowser();
@@ -57,7 +58,7 @@ const parser = async ({ withoutUpdatePrice }) => {
             console.log('<=============================================>');
 
             try {
-                const { createdId, images, price } = await checkIsItemIsCreatedFromRequest({ itemInfo });
+                const { createdId, images, price, sku } = await checkIsItemIsCreatedFromRequest({ itemInfo });
 
                 if (!createdId) {
                     // создать
@@ -91,16 +92,26 @@ const parser = async ({ withoutUpdatePrice }) => {
                         price || itemInfo.price_zakupka
                         : itemInfo.price_zakupka;
 
+                    const oldPrice = withoutUpdateOldPrice ?
+                        await getOldPrice({
+                            id: createdId,
+                            sku,
+                            cookie: parsedCookie,
+                        })
+                        : '';
+
                     console.log(
                         withoutUpdatePrice ? "БЕРЕМ СТАРУЮ ЦЕНУ" : "БЕРЕМ НОВУЮ ЦЕНУ",
-                        priceZakupka
+                        priceZakupka, oldPrice
                     );
+
 
                     await createThing({
                         cookie: parsedCookie,
                         itemInfo: {
                             ...itemInfo,
                             price_zakupka: priceZakupka,
+                            oldPrice,
                         },
                         allImgPath,
                         isAddMode: false,
@@ -129,9 +140,9 @@ const createThing = async ({
    allImgPath,
    isParallel = false,
    isAddMode = false,
-   createdId = null
+   createdId = null,
 }) => {
-    const { price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul } = itemInfo;
+    const { price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul, oldPrice } = itemInfo;
 
     const dateNow = moment().format('DD.MM.YYYY');
 
@@ -216,7 +227,7 @@ const createThing = async ({
             short_desc%5Bru%5D%5B1%5D=${sostav}&
             desc%5Bru%5D%5B1%5D=${text}&
             price%5B1%5D=${price_zakupka}&
-            price%5B2%5D=&
+            price%5B2%5D=${oldPrice || ''}&
             ${getSize(size_list)}
             ${getHeight(`${height}`)}
             ${photoIds}
