@@ -1,41 +1,41 @@
 const puppeteer = require('puppeteer');
 
 const blockedResourceTypes = [
-    // 'image',
-    // 'media',
-    // 'font',
-    // 'texttrack',
-    // 'object',
-    // 'beacon',
-    // 'csp_report',
-    // 'imageset',
-    // 'stylesheet'
+    'image',
+    'media',
+    'font',
+    'texttrack',
+    'object',
+    'beacon',
+    'csp_report',
+    'imageset',
+    'stylesheet'
 ];
 
 const skippedResources = [
-    // 'quantserve',
-    // 'adzerk',
-    // 'doubleclick',
-    // 'adition',
-    // 'exelator',
-    // 'sharethrough',
-    //
-    // 'cdn.api.twitter',
-    // 'google-analytics',
-    // 'googletagmanager',
-    // 'google',
-    // 'fontawesome',
-    // 'facebook',
-    // 'analytics',
-    // '.png',
-    // 'optimizely',
-    //
-    // 'clicktale',
-    // 'mixpanel',
-    // 'zedo',
-    // 'clicksor',
-    // 'tiqcdn',
-    // 'jquery'
+    'quantserve',
+    'adzerk',
+    'doubleclick',
+    'adition',
+    'exelator',
+    'sharethrough',
+
+    'cdn.api.twitter',
+    'google-analytics',
+    'googletagmanager',
+    'google',
+    'fontawesome',
+    'facebook',
+    'analytics',
+    '.png',
+    'optimizely',
+
+    'clicktale',
+    'mixpanel',
+    'zedo',
+    'clicksor',
+    'tiqcdn',
+    'jquery'
 ];
 
 const getCookies = async (page) => await page.cookies();
@@ -53,7 +53,7 @@ const auth = async (page, selectors, creds) => {
     await btn.click();
 };
 
-const getPage = async (browser, url, isLoadScript = true) => {
+const getPage = async (browser, url, isLoadScript = true, requestCB) => {
     const page = await browser.newPage();
 
     await page.setUserAgent(
@@ -65,6 +65,7 @@ const getPage = async (browser, url, isLoadScript = true) => {
             await page.setRequestInterception(true);
 
             page.on('request', (request) => {
+                requestCB && requestCB(request)
                 if (
                     blockedResourceTypes.indexOf(request.resourceType()) !== -1
                     || skippedResources.some((resource) => request.url().includes(resource))

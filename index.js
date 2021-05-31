@@ -1,6 +1,6 @@
 const { remove } = require('./src/utils/fileAPI');
-const { parser: belBazarParser } = require(`./src/extractors/belbazar24/belbazar24.js`);
-const { parser: millModaParser } = require(`./src/extractors/millmoda/millmoda.js`);
+const { parser: millModaParser } = require('./src/extractors/millmoda/millmoda.js');
+const { parser: belLavkaParser } = require('./src/extractors/belLavka');
 
 const { printHeader } = require('./src/utils/printHeader');
 
@@ -17,20 +17,8 @@ const run = async () => {
         case 'Отчистить папку data': {
             return await remove();
         }
-        case 'Спарсить по брэнду': {
-            return await belBazarParser([], null, true);
-        }
-        case 'Спарсить изменения за последние 2 дня': {
-            return await belBazarParser([], 2);
-        }
-        case 'За все время': {
-            return await belBazarParser([]);
-        }
-        case 'За неделю': {
-            return await belBazarParser(['7day']);
-        }
-        case 'За 48 часов': {
-            return await belBazarParser(['2day']);
+        case 'Спарсить bellavka': {
+            return await belLavkaParser();
         }
         case 'Закинуть на millmoda': {
             return await millModaParser({

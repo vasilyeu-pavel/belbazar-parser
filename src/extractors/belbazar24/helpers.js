@@ -31,12 +31,12 @@ const getBrandsList = async (url) => {
 
     const brands = await page.evaluate(() =>
         [...document
-            .querySelector('#filtr_form > div:nth-child(7)')
-            .querySelectorAll('.cb_col')
+            .querySelector('#fbox_brand')
+            .querySelectorAll('.filtr_item')
         ]
             .map(col => ({
                 id: col.querySelector('input').value || '',
-                name: col.innerText || '',
+                name: col.innerText.trim() || '',
             }))
     );
 
@@ -46,12 +46,12 @@ const getBrandsList = async (url) => {
 };
 
 const selectBrand = async (url, id) => {
-    const browser = await getBrowser(true, false);
+    const browser = await getBrowser(false, false);
     const page = await getPage(browser, url);
 
     await page.evaluate(({ brandId }) => {
         document
-            .getElementById(`f_1_${brandId}`).click()
+            .getElementById(`f_brand_${brandId}`).click()
     }, { brandId: id });
 
     await page.waitFor(3000);
@@ -73,6 +73,7 @@ const request = ({ cookie, host, page = 1, options, ...other }) => {
 
     const formData = getFormData(filters);
 
+    // todo pavas поменять на парсинг
     return getList({ body: formData, cookie, host });
 };
 

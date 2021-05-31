@@ -36,7 +36,7 @@ const parser = async (options = [], dayAgo = null, byBrand = false) => {
         const brands = await getBrandsList(uri);
 
         if (!brands || !brands.length) {
-            throw new Error('Не спарсились названия брэндов. Запустите заного.')
+            throw new Error('Не спарсились названия брэндов. Запустите заново.')
         }
 
         const { choice } = await selectMode('Выберите брэнд', brands);
@@ -46,7 +46,7 @@ const parser = async (options = [], dayAgo = null, byBrand = false) => {
         console.log(`Парсим по брэнд ${JSON.stringify(choisedBrand)}`);
 
         if (!choisedBrand || !choisedBrand.id) {
-            throw new Error('Не спарсились названия брэндов. Запустите заного.')
+            throw new Error('Не спарсились названия брэндов. Запустите заново.')
         }
         // вытягиваем куки с сайта
         cookie = await selectBrand(uri, choisedBrand.id);
