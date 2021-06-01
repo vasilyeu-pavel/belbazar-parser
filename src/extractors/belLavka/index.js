@@ -174,7 +174,7 @@ const parser = async () => {
   console.time('scraping');
   console.log('scraping...');
 
-  const browser = await getBrowser(false, true);
+  const browser = await getBrowser(true, true);
   Store.browser = browser
 
   const page = await getPage(browser, WHOLESALE_URL, true, requestCB);
