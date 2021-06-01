@@ -6,6 +6,15 @@ const {
   getCookies,
 } = require('../../utils/page');
 const { selectMode } = require('../../utils/questions');
+const { getFormData } = require('../../utils/formData');
+const path = require('path');
+const mkdirp = require('mkdirp');
+
+// utils
+const { delay } = require('../../utils/utils');
+
+// file apis
+const { writeFileAsync, download } = require('../../utils/fileAPI');
 
 const Store = {
   browser: null,
@@ -19,7 +28,6 @@ const PER_PAGE = 200
 const getBrandPageUrl = (brandName, page = 1) => `https://bellavka.by/catalog/${brandName}?per_page=${PER_PAGE}&page=${page}`
 const TOKEN = "x-xsrf-token"
 const ALL_BRANDS = "Все брэнды"
-const PAGINATION_SELECTOR = "#pagination"
 const ALL_ITEMS_SELECTOR = '.cat.title-h4'
 const ALL_BRANDS_SELECTOR = '#page > div > div.main-content > div.header > div.navigation > div > div.second-menu > ul > li.main-menu__li.header__brands-li > div > div:nth-child(1) > div.links > a.all'
 
@@ -71,17 +79,15 @@ const getBrands = async () => {
 const getItemsInfoByIds = async (ids) => {
   try {
     return await Promise.all(ids.map(async (id) => {
-      // todo pavas
-      //  разобраться почему падают запросы
-      //  reason: Unexpected token < in JSON at position 0
-      const res = await fetch("https://bellavka.ru/catalog/quick-view", {
+      const form = getFormData([{ id }]);
+      const res = await fetch("https://bellavka.by/catalog/quick-view", {
         headers: {
-          [TOKEN]: Store.token,
           "cookie": cookiesParser(Store.cookie),
+          "x-xsrf-token": Store.token,
         },
+        body: form,
         method: "POST",
-        body: `{\"id\": ${id}`,
-      })
+      });
       return await res.json()
     }))
   } catch (e) {
@@ -113,12 +119,12 @@ const getPageCount = async (page) => {
   return new Array(count).fill(null).map((a, i) => i + 1);
 }
 
-const getItemInfoByPages = async (browser, pageCounts, brandName) => {
+const getItemInfoByPages = async (page, pageCounts, brandName) => {
   const result = []
   for await (const pageNumber of pageCounts) {
     console.log(`Парсим страницу ${pageNumber} (брэнд - ${brandName})`)
     const url = getBrandPageUrl(brandName, pageNumber)
-    const page = await getPage(browser, url);
+    await page.goto(url);
 
     const itemsId = await page.evaluate(() =>
       window.dataLayer[1].ecommerce.impressions.map(({ id }) => id)
@@ -131,10 +137,36 @@ const getItemInfoByPages = async (browser, pageCounts, brandName) => {
         result.push(...itemsInfo)
       }
     }
+  }
 
-    console.log(result)
+  return result
+}
 
-    await page.close()
+const savingItemsInfo = async (items) => {
+  console.log(`Спарсилось ${items.length}, начинаем сохранять`)
+  // цикл по всем вещам в списке
+  for await (const item of items) {
+    const { id: numberId, photos } = item;
+    const id = `${numberId}`
+
+    const folderPath = path.join(path.resolve(), 'src', 'data');
+    await mkdirp(path.join(folderPath, id));
+
+    // скачать все картинки параллельно
+    await Promise.all(photos.map(({ full }, i) =>
+      full && download(full, id, `${id}_${i + 1}`))
+    );
+
+    await delay(1000);
+
+    try {
+      // сохраняем отдельно для каждой шмотки инфу
+      await writeFileAsync(item, `${id}/${id}.json`);
+    } catch (e) {
+      console.log(e);
+    }
+
+    console.log(JSON.stringify(item, null, 4));
   }
 }
 
@@ -142,17 +174,14 @@ const parser = async () => {
   console.time('scraping');
   console.log('scraping...');
 
-  const browser = await getBrowser(true, true);
+  const browser = await getBrowser(false, true);
   Store.browser = browser
 
   const page = await getPage(browser, WHOLESALE_URL, true, requestCB);
-  Store.currentPage = page
-
-  const cookie = await getCookies(page);
-  Store.cookie = cookie
 
   // клик по кнопке "Все брэнде" - для того что б выдрать токен
   if (!Store.token) await page.click(ALL_BRANDS_SELECTOR)
+  Store.cookie = await getCookies(page);
 
   const brands = await getBrands();
 
@@ -177,11 +206,9 @@ const parser = async () => {
   await page.goto(getBrandPageUrl(slug));
   const pageCounts = await getPageCount(page);
 
-  await page.close()
+  const allInfoAboutItems = await getItemInfoByPages(page, pageCounts, slug)
 
-  await getItemInfoByPages(browser, pageCounts, slug)
-
-  console.log(pageCounts)
+  await savingItemsInfo(allInfoAboutItems)
 
   console.timeEnd('scraping');
   await browser.close();
