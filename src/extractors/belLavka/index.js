@@ -129,11 +129,13 @@ const prepareDataForMilModa = items => items.map((item) => {
     sizes,
     fabric_txt,
     description,
+    name,
   } = item
 
   return {
     ...item,
     indexid: id,
+    articul: name,
     brend: {
       nazv: brand.value,
     },
