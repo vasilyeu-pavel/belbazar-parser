@@ -119,6 +119,33 @@ const getPageCount = async (page) => {
   return new Array(count).fill(null).map((a, i) => i + 1);
 }
 
+const prepareDataForMilModa = items => items.map((item) => {
+  const {
+    id,
+    brand,
+    category,
+    heights,
+    buy_price,
+    sizes,
+    fabric_txt,
+    description,
+  } = item
+
+  return {
+    ...item,
+    indexid: id,
+    brend: {
+      nazv: brand.value,
+    },
+    cat_nazv: category.value,
+    height: Object.keys(heights).map(height => heights[height].value).join("-").trim(),
+    price_zakupka: buy_price,
+    size_list: Object.keys(sizes).map(size => sizes[size].value),
+    sostav: fabric_txt,
+    text: description,
+  }
+})
+
 const getItemInfoByPages = async (page, pageCounts, brandName) => {
   const result = []
   for await (const pageNumber of pageCounts) {
@@ -134,7 +161,7 @@ const getItemInfoByPages = async (page, pageCounts, brandName) => {
       const itemsInfo = await getItemsInfoByIds(itemsId)
 
       if (itemsInfo && itemsInfo.length) {
-        result.push(...itemsInfo)
+        result.push(...prepareDataForMilModa(itemsInfo))
       }
     }
   }
