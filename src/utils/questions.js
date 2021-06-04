@@ -1,5 +1,7 @@
 const inquirer = require('inquirer');
 
+inquirer.registerPrompt('datetime', require('inquirer-datepicker-prompt'));
+
 const choisesFromHomePage = [
     // {
     //     name: 'Спарсить по брэнду'
@@ -36,6 +38,24 @@ const choisesFromHomePage = [
     }
 ];
 
+const getParsingDate = async () => {
+    const questions = [
+        {
+            type: 'datetime',
+            name: 'day',
+            message: 'Какой день будем парсить?',
+            format: ['yyyy', '-', 'mm', '-', 'dd'],
+            initial: Date.parse(new Date()),
+            date: {
+                min: '1/1/2017',
+                max: '3/1/2017'
+            }
+        },
+    ];
+
+    return inquirer.prompt(questions);
+};
+
 const selectMode = async (message = 'Что делаем :) ?', choices = choisesFromHomePage) => {
     const questions = [
         {
@@ -43,12 +63,12 @@ const selectMode = async (message = 'Что делаем :) ?', choices = choise
             message,
             name: 'choice',
             choices
-        }
+        },
     ];
 
     return inquirer.prompt(questions);
 };
 
 module.exports = {
-    selectMode,
+    selectMode, getParsingDate,
 };

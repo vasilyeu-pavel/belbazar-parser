@@ -1,20 +1,24 @@
 const fetch = require('node-fetch');
+const path = require('path');
+const mkdirp = require('mkdirp');
+
 const {
   getBrowser,
   cookiesParser,
   getPage,
   getCookies,
 } = require('../../utils/page');
-const { selectMode } = require('../../utils/questions');
+const { selectMode, getParsingDate } = require('../../utils/questions');
 const { getFormData } = require('../../utils/formData');
-const path = require('path');
-const mkdirp = require('mkdirp');
 
 // utils
 const { delay } = require('../../utils/utils');
 
 // file apis
 const { writeFileAsync, download } = require('../../utils/fileAPI');
+
+// data for filter
+const { notAvailableBrands } = require('./data');
 
 const Store = {
   browser: null,
@@ -31,18 +35,11 @@ const ALL_BRANDS = "Все брэнды"
 const ALL_ITEMS_SELECTOR = '.cat.title-h4'
 const ALL_BRANDS_SELECTOR = '#page > div > div.main-content > div.header > div.navigation > div > div.second-menu > ul > li.main-menu__li.header__brands-li > div > div:nth-child(1) > div.links > a.all'
 
+const filterByBrands = ({ value: brand }) => !notAvailableBrands.includes(brand)
+
 const getBrands = async () => {
   if (!Store.token) throw new Error("Невозможно запросить брэнды - отсутствует токен")
-  const allBrands = [
-    {
-      name: ALL_BRANDS,
-      value: ALL_BRANDS,
-      id: 1,
-      slug: {
-        slug: "/",
-      },
-    },
-  ];
+  const allBrands = [];
 
   try {
     const response = await fetch("https://bellavka.by/info/brands", {
@@ -66,7 +63,20 @@ const getBrands = async () => {
       allBrands.push(brands[letter])
     })
 
-    return allBrands.map(brand => ({
+    const filteredBrands = allBrands.filter(filterByBrands)
+
+    console.log(filteredBrands.length)
+
+    filteredBrands.push({
+      name: ALL_BRANDS,
+      value: ALL_BRANDS,
+      id: 1,
+      slug: {
+        slug: "/",
+      },
+    })
+
+    return filteredBrands.map(brand => ({
       ...brand,
       name: brand.value,
     }))
@@ -199,6 +209,28 @@ const savingItemsInfo = async (items) => {
   }
 }
 
+const parsingByBrand = async (brandInfo, page, parsingDate) => {
+  if (!brandInfo) throw new Error('Что то пошло не так, не сопоставился брэнд с вашим выбором')
+
+  const { slug: { slug }, value } = brandInfo
+
+  console.log(`Начинаем парсить брэнд: ${value}`)
+
+  // идем на страницу брэнда
+  await page.goto(getBrandPageUrl(slug));
+  const pageCounts = await getPageCount(page);
+
+  const allInfoAboutItems = await getItemInfoByPages(page, pageCounts, slug)
+
+  console.log(`Фильтруем спаршеные товары по дате (дата ${parsingDate}), было ${allInfoAboutItems.length}`)
+
+  const filteredItems = allInfoAboutItems.filter(({ updated_date }) => new Date(parsingDate) >= new Date(updated_date))
+
+  console.log(`стало ${filteredItems.length}`)
+
+  await savingItemsInfo(filteredItems)
+}
+
 const parser = async () => {
   console.time('scraping');
   console.log('scraping...');
@@ -212,32 +244,30 @@ const parser = async () => {
   if (!Store.token) await page.click(ALL_BRANDS_SELECTOR)
   Store.cookie = await getCookies(page);
 
+  const { day: parsingDate } = await getParsingDate()
+
   const brands = await getBrands();
+
+  console.log(parsingDate)
 
   const { choice } = await selectMode('Выберите брэнд', brands);
   if (choice === ALL_BRANDS) {
     // todo Pavas - добавить режим для всех брэндов
     console.log('Вы выбрали режим:', ALL_BRANDS)
-    console.log('На данный момент он в разработке!')
-    console.timeEnd('scraping');
-    await browser.close();
+    for await (const brandInfo of brands) {
+      if (brandInfo.value !== ALL_BRANDS) {
+        await parsingByBrand(brandInfo, page, parsingDate)
+      }
+    }
 
-    return
+    console.timeEnd('scraping');
+    return await browser.close();
   }
 
   /////////////////// парсинг по брэнду ////////////////
   const brandInfo = brands.find(({ name }) => name === choice)
-  if (!brandInfo) throw new Error('Что то пошло не так, не сопоставился брэнд с вашим выбором')
 
-  const { slug: { slug } } = brandInfo
-
-  // идем на страницу брэнда
-  await page.goto(getBrandPageUrl(slug));
-  const pageCounts = await getPageCount(page);
-
-  const allInfoAboutItems = await getItemInfoByPages(page, pageCounts, slug)
-
-  await savingItemsInfo(allInfoAboutItems)
+  await parsingByBrand(brandInfo, page, parsingDate)
 
   console.timeEnd('scraping');
   await browser.close();
