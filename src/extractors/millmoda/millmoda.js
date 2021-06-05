@@ -143,7 +143,7 @@ const createThing = async ({
    isAddMode = false,
    createdId = null,
 }) => {
-    const { price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul, oldPrice, fullName } = itemInfo;
+    const { price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul, oldPrice, name } = itemInfo;
 
     console.log({ price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul, oldPrice })
 
@@ -224,7 +224,7 @@ const createThing = async ({
                 },
                 body:`
                 script=${isAddMode ? 'add' : 'edit'}&
-                name%5Bru%5D=${fullName || ''}&
+                name%5Bru%5D=${name || ''}&
                 sku=${indexid}&
                 category=${getCatId(cat_nazv)}& 
                 brand=${getBrandId(brend.nazv)}&
