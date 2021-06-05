@@ -43,7 +43,7 @@ const getParsingDate = async () => {
         {
             type: 'datetime',
             name: 'day',
-            message: 'Какой день будем парсить?',
+            message: 'С какого дня будем парсить?',
             format: ['yyyy', '-', 'mm', '-', 'dd'],
             initial: Date.parse(new Date()),
             date: {

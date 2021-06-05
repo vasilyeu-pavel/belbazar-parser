@@ -140,6 +140,7 @@ const prepareDataForMilModa = items => items.map((item) => {
     fabric_txt,
     description,
     name,
+    retail_price,
   } = item
 
   return {
@@ -151,7 +152,7 @@ const prepareDataForMilModa = items => items.map((item) => {
     },
     cat_nazv: category.value,
     height: Object.keys(heights).map(height => heights[height].value).join("-").trim(),
-    price_zakupka: buy_price,
+    price_zakupka: buy_price || retail_price,
     size_list: Object.keys(sizes).map(size => sizes[size].value),
     sostav: fabric_txt,
     text: description,
@@ -224,7 +225,7 @@ const parsingByBrand = async (brandInfo, page, parsingDate) => {
 
   console.log(`Фильтруем спаршеные товары по дате (дата ${parsingDate}), было ${allInfoAboutItems.length}`)
 
-  const filteredItems = allInfoAboutItems.filter(({ updated_date }) => new Date(parsingDate) >= new Date(updated_date))
+  const filteredItems = allInfoAboutItems.filter(({ updated_date }) => new Date(parsingDate) <= new Date(updated_date))
 
   console.log(`стало ${filteredItems.length}`)
 

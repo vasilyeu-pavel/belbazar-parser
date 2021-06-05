@@ -6,8 +6,8 @@ const selectors = {
 
 // todo заполнить креды
 const creds = {
-    login: '',
-    pass: '',
+    login: 'Pavlo_dostup',
+    pass: 'Zhi35287898QWERTY',
 };
 
 const brands = {

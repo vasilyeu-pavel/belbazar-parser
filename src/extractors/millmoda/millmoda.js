@@ -9,6 +9,7 @@ const { creds, selectors } = require('./data');
 const { getBrowser, cookiesParser, getPage, getCookies, auth } = require('../../utils/page');
 
 const { delay } = require('../../utils/utils');
+const { getFormData } = require('../../utils/formData');
 
 const {
     createImg,
@@ -142,7 +143,9 @@ const createThing = async ({
    isAddMode = false,
    createdId = null,
 }) => {
-    const { price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul, oldPrice } = itemInfo;
+    const { price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul, oldPrice, fullName } = itemInfo;
+
+    console.log({ price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul, oldPrice })
 
     const dateNow = moment().format('DD.MM.YYYY');
 
@@ -211,38 +214,42 @@ const createThing = async ({
 
     const url = isAddMode ? addUrl : editUrl;
 
-    // сохранить шмот
-    const response = await fetch(url,
-        {
-            headers:{
-                Cookie: cookie,
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-            body:`
-            script=${isAddMode ? 'add' : 'edit'}&
-            name%5Bru%5D=${articul || ''}&
-            sku=${indexid}&
-            category=${getCatId(cat_nazv)}& 
-            brand=${getBrandId(brend.nazv)}&
-            short_desc%5Bru%5D%5B1%5D=${sostav}&
-            desc%5Bru%5D%5B1%5D=${text}&
-            price%5B1%5D=${price_zakupka}&
-            price%5B2%5D=${oldPrice || ''}&
-            ${getSize(size_list)}
-            ${getHeight(`${height}`)}
-            ${photoIds}
-            avail=1&
-            skin=item-new&
-            add_date=${dateNow}&
-            files%5B%5D=&
-            seo_title%5Bru%5D=&
-            seo_desc%5Bru%5D=&
-            seo_keys%5Bru%5D=`
-                .replace(/\n/g, ''),
-            method: 'POST',
-        });
+    try {
+        // сохранить шмот
+        const response = await fetch(url,
+            {
+                headers:{
+                    Cookie: cookie,
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+                body:`
+                script=${isAddMode ? 'add' : 'edit'}&
+                name%5Bru%5D=${fullName || ''}&
+                sku=${indexid}&
+                category=${getCatId(cat_nazv)}& 
+                brand=${getBrandId(brend.nazv)}&
+                short_desc%5Bru%5D%5B1%5D=${sostav}&
+                desc%5Bru%5D%5B1%5D=${text}&
+                price%5B1%5D=${price_zakupka}&
+                price%5B2%5D=${oldPrice || ''}&
+                ${getSize(size_list)}
+                ${getHeight(`${height}`)}
+                ${photoIds}
+                avail=1&
+                skin=item-new&
+                add_date=${dateNow}&
+                files%5B%5D=&
+                seo_title%5Bru%5D=&
+                seo_desc%5Bru%5D=&
+                seo_keys%5Bru%5D=`.replace(/\n/g, ''),
+                method: 'POST',
+            });
 
-    return await response.text();
+        return await response.text();
+    } catch (e) {
+        console.log("Ошибка в запросе создание/изменения шмота на милмоде")
+        console.log(e)
+    }
 };
 
 module.exports = {
