@@ -143,9 +143,7 @@ const createThing = async ({
    isAddMode = false,
    createdId = null,
 }) => {
-    const { price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul, oldPrice, name } = itemInfo;
-
-    console.log({ price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, articul, oldPrice })
+    const { price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, oldPrice, name } = itemInfo;
 
     const dateNow = moment().format('DD.MM.YYYY');
 
@@ -222,11 +220,9 @@ const createThing = async ({
                     Cookie: cookie,
                     'content-type': 'application/x-www-form-urlencoded',
                 },
-                body:`
-                script=${isAddMode ? 'add' : 'edit'}&
-                name%5Bru%5D=${name || ''}&
-                sku=${indexid}&
-                category=${getCatId(cat_nazv)}& 
+                body: `
+                script=${isAddMode ? 'add' : 'edit'}&name%5Bru%5D=${name || ''}&sku=${indexid}&
+                category=${getCatId(cat_nazv)}&
                 brand=${getBrandId(brend.nazv)}&
                 short_desc%5Bru%5D%5B1%5D=${sostav}&
                 desc%5Bru%5D%5B1%5D=${text}&
@@ -241,6 +237,7 @@ const createThing = async ({
                 files%5B%5D=&
                 seo_title%5Bru%5D=&
                 seo_desc%5Bru%5D=&
+                page_url=${indexid}&
                 seo_keys%5Bru%5D=`.replace(/\n/g, ''),
                 method: 'POST',
             });
