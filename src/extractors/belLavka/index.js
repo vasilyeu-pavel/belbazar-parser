@@ -150,9 +150,9 @@ const prepareDataForMilModa = items => items.map((item) => {
       nazv: brand.value,
     },
     cat_nazv: category.value,
-    height: Object.keys(heights).map(height => heights[height].value).join("-").trim(),
+    height: heights ? Object.keys(heights).map(height => heights[height].value).join("-").trim() : "164",
     price_zakupka: buy_price,
-    size_list: Object.keys(sizes).map(size => sizes[size].value),
+    size_list: sizes ? Object.keys(sizes).map(size => sizes[size].value) : [],
     sostav: fabric_txt,
     text: description,
   }

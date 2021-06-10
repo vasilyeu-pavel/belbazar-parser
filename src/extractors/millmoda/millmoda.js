@@ -214,6 +214,7 @@ const createThing = async ({
 
     try {
         // сохранить шмот
+        // page_url=${indexid}&
         const response = await fetch(url,
             {
                 headers:{
@@ -237,7 +238,6 @@ const createThing = async ({
                 files%5B%5D=&
                 seo_title%5Bru%5D=&
                 seo_desc%5Bru%5D=&
-                page_url=${indexid}&
                 seo_keys%5Bru%5D=`.replace(/\n/g, ''),
                 method: 'POST',
             });
