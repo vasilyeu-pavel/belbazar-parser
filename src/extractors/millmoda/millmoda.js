@@ -59,7 +59,7 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
             console.log('<=============================================>');
 
             try {
-                const { createdId, images, price, sku } = await checkIsItemIsCreatedFromRequest({ itemInfo });
+                const { createdId, images, price, sku, page_url } = await checkIsItemIsCreatedFromRequest({ itemInfo });
 
                 if (!createdId) {
                     // создать
@@ -69,6 +69,7 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
                         itemInfo,
                         allImgPath,
                         isAddMode: true,
+                        page_url,
                     });
 
                     if (html.includes('Вход в систему')) {
@@ -116,7 +117,8 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
                         },
                         allImgPath,
                         isAddMode: false,
-                        createdId
+                        createdId,
+                        page_url,
                     });
 
                     console.log('<===========Статус===============>');
@@ -142,6 +144,7 @@ const createThing = async ({
    isParallel = false,
    isAddMode = false,
    createdId = null,
+   page_url = ''
 }) => {
     const { price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, oldPrice, name } = itemInfo;
 
@@ -214,7 +217,7 @@ const createThing = async ({
 
     try {
         // сохранить шмот
-        // page_url=${indexid}&
+        console.log("page_url", page_url)
         const response = await fetch(url,
             {
                 headers:{
@@ -238,6 +241,7 @@ const createThing = async ({
                 files%5B%5D=&
                 seo_title%5Bru%5D=&
                 seo_desc%5Bru%5D=&
+                page_url=${page_url}&
                 seo_keys%5Bru%5D=`.replace(/\n/g, ''),
                 method: 'POST',
             });
