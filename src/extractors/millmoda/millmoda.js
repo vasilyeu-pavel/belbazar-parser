@@ -215,9 +215,10 @@ const createThing = async ({
 
     const url = isAddMode ? addUrl : editUrl;
 
+    const itemName = `${name || indexid}-1`
+
     try {
         // сохранить шмот
-        console.log("page_url", page_url)
         const response = await fetch(url,
             {
                 headers:{
@@ -225,7 +226,7 @@ const createThing = async ({
                     'content-type': 'application/x-www-form-urlencoded',
                 },
                 body: `
-                script=${isAddMode ? 'add' : 'edit'}&name%5Bru%5D=${name || ''}&sku=${indexid}&
+                script=${isAddMode ? 'add' : 'edit'}&name%5Bru%5D=${itemName}&sku=${indexid}&
                 category=${getCatId(cat_nazv)}&
                 brand=${getBrandId(brend.nazv)}&
                 short_desc%5Bru%5D%5B1%5D=${sostav}&
