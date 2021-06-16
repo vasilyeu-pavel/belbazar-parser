@@ -25,6 +25,7 @@ const Store = {
   currentPage: null,
   token: null,
   cookie: null,
+  parsingDate: null,
 }
 
 const WHOLESALE_URL = "https://bellavka.by/type/wholesale"
@@ -36,6 +37,8 @@ const ALL_ITEMS_SELECTOR = '.cat.title-h4'
 const ALL_BRANDS_SELECTOR = '#page > div > div.main-content > div.header > div.navigation > div > div.second-menu > ul > li.main-menu__li.header__brands-li > div > div:nth-child(1) > div.links > a.all'
 
 const filterByBrands = ({ value: brand }) => !notAvailableBrands.includes(brand)
+
+const compareDate = (updated_date) => new Date(Store.parsingDate) <= new Date(updated_date)
 
 const getBrands = async () => {
   if (!Store.token) throw new Error("Невозможно запросить брэнды - отсутствует токен")
@@ -86,23 +89,31 @@ const getBrands = async () => {
   }
 }
 
+const getItemsInfoById = async (id) => {
+  try {
+    const form = getFormData([{id}]);
+    const res = await fetch("https://bellavka.by/catalog/quick-view", {
+      headers: {
+        "cookie": cookiesParser(Store.cookie),
+        "x-xsrf-token": Store.token,
+      },
+      body: form,
+      method: "POST",
+    });
+
+    return await res.json()
+  } catch (e) {
+    console.log("Ошибка в методе: getItemsInfoById", e)
+    throw new Error(e)
+  }
+}
+
 const getItemsInfoByIds = async (ids) => {
   try {
-    return await Promise.all(ids.map(async (id) => {
-      const form = getFormData([{ id }]);
-      const res = await fetch("https://bellavka.by/catalog/quick-view", {
-        headers: {
-          "cookie": cookiesParser(Store.cookie),
-          "x-xsrf-token": Store.token,
-        },
-        body: form,
-        method: "POST",
-      });
-      return await res.json()
-    }))
+    return await Promise.all(ids.map(getItemsInfoById))
   } catch (e) {
     console.log(e)
-    throw new Error("Ошибка в запросе за информацией товара (метод - getItemInfoByPages)")
+    throw new Error("Ошибка в запросах за информацией товара (метод - getItemInfoByPages)")
   }
 }
 
@@ -159,22 +170,35 @@ const prepareDataForMilModa = items => items.map((item) => {
 })
 
 const getItemInfoByPages = async (page, pageCounts, brandName) => {
+  let isCompleted = false
+
   const result = []
   for await (const pageNumber of pageCounts) {
-    console.log(`Парсим страницу ${pageNumber} (брэнд - ${brandName})`)
-    const url = getBrandPageUrl(brandName, pageNumber)
-    await page.goto(url);
+    if (!isCompleted) {
+      console.log(`Парсим страницу ${pageNumber} (брэнд - ${brandName})`)
+      const url = getBrandPageUrl(brandName, pageNumber)
+      await page.goto(url);
 
-    const itemsId = await page.evaluate(() =>
-      window.dataLayer[1].ecommerce.impressions.map(({ id }) => id)
-    )
+      const itemsId = await page.evaluate(() =>
+        window.dataLayer[1].ecommerce.impressions.map(({ id }) => id)
+      )
 
-    if (itemsId || itemsId.length) {
-      const itemsInfo = await getItemsInfoByIds(itemsId)
+      if (itemsId || itemsId.length) {
+        const itemsInfo = await getItemsInfoByIds(itemsId)
 
-      if (itemsInfo && itemsInfo.length) {
-        result.push(...prepareDataForMilModa(itemsInfo))
+        const { updated_at } = itemsInfo[itemsId.length - 1]
+
+        if (!compareDate(updated_at)) {
+          isCompleted = true
+        }
+
+        if (itemsInfo && itemsInfo.length) {
+          result.push(...prepareDataForMilModa(itemsInfo))
+        }
       }
+
+    } else {
+      console.log(`Пропускаем страницу ${pageNumber} (брэнд - ${brandName}) - прошла фильтрацию по дате`)
     }
   }
 
@@ -196,7 +220,7 @@ const savingItemsInfo = async (items) => {
       full && download(full, id, `${id}_${i + 1}`))
     );
 
-    await delay(1000);
+    await delay(100);
 
     try {
       // сохраняем отдельно для каждой шмотки инфу
@@ -205,11 +229,11 @@ const savingItemsInfo = async (items) => {
       console.log(e);
     }
 
-    console.log(JSON.stringify(item, null, 4));
+    console.log(`Скачали ${numberId}`);
   }
 }
 
-const parsingByBrand = async (brandInfo, page, parsingDate) => {
+const parsingByBrand = async (brandInfo, page) => {
   if (!brandInfo) throw new Error('Что то пошло не так, не сопоставился брэнд с вашим выбором')
 
   const { slug: { slug }, value } = brandInfo
@@ -222,10 +246,10 @@ const parsingByBrand = async (brandInfo, page, parsingDate) => {
 
   const allInfoAboutItems = await getItemInfoByPages(page, pageCounts, slug)
 
-  console.log(`Фильтруем спаршеные товары по дате (дата ${parsingDate}), было ${allInfoAboutItems.length}`)
+  console.log(`Фильтруем спаршеные товары по дате (дата ${Store.parsingDate}), было ${allInfoAboutItems.length}`)
 
   const filteredItems = allInfoAboutItems
-    .filter(({ updated_date }) => new Date(parsingDate) <= new Date(updated_date))
+    .filter(({ updated_date }) => compareDate(updated_date))
     .filter(({ price_zakupka }) => !!price_zakupka)
 
   console.log(`стало ${filteredItems.length}`)
@@ -246,19 +270,18 @@ const parser = async () => {
   if (!Store.token) await page.click(ALL_BRANDS_SELECTOR)
   Store.cookie = await getCookies(page);
 
-  const { day: parsingDate } = await getParsingDate()
-
   const brands = await getBrands();
 
-  console.log(parsingDate)
+  const { day }= await getParsingDate()
+
+  Store.parsingDate = day
 
   const { choice } = await selectMode('Выберите брэнд', brands);
   if (choice === ALL_BRANDS) {
-    // todo Pavas - добавить режим для всех брэндов
     console.log('Вы выбрали режим:', ALL_BRANDS)
     for await (const brandInfo of brands) {
       if (brandInfo.value !== ALL_BRANDS) {
-        await parsingByBrand(brandInfo, page, parsingDate)
+        await parsingByBrand(brandInfo, page)
       }
     }
 
@@ -269,7 +292,7 @@ const parser = async () => {
   /////////////////// парсинг по брэнду ////////////////
   const brandInfo = brands.find(({ name }) => name === choice)
 
-  await parsingByBrand(brandInfo, page, parsingDate)
+  await parsingByBrand(brandInfo, page)
 
   console.timeEnd('scraping');
   await browser.close();
