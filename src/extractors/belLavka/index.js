@@ -20,8 +20,6 @@ const { writeFileAsync, download } = require('../../utils/fileAPI');
 // data for filter
 const { notAvailableBrands } = require('./data');
 
-const chunkArray = require('../../utils/chunkArray');
-
 const Store = {
   browser: null,
   currentPage: null,
@@ -30,7 +28,6 @@ const Store = {
   parsingDate: null,
 }
 
-const TREADS = 7
 const WHOLESALE_URL = "https://bellavka.by/type/wholesale"
 const PER_PAGE = 200
 const getBrandPageUrl = (brandName, page = 1) => `https://bellavka.by/catalog/${brandName}?per_page=${PER_PAGE}&page=${page}`
@@ -236,7 +233,7 @@ const savingItemsInfo = async (items) => {
   }
 }
 
-const parsingByBrand = async (brandInfo) => {
+const parsingByBrand = async (brandInfo, page) => {
   if (!brandInfo) throw new Error('Что то пошло не так, не сопоставился брэнд с вашим выбором')
 
   const { slug: { slug }, value } = brandInfo
@@ -244,12 +241,10 @@ const parsingByBrand = async (brandInfo) => {
   console.log(`Начинаем парсить брэнд: ${value}`)
 
   // идем на страницу брэнда
-  const page = await getPage(Store.browser, getBrandPageUrl(slug), true)
+  await page.goto(getBrandPageUrl(slug));
   const pageCounts = await getPageCount(page);
 
   const allInfoAboutItems = await getItemInfoByPages(page, pageCounts, slug)
-
-  await page.close()
 
   console.log(`Фильтруем спаршеные товары по дате (дата ${Store.parsingDate}), было ${allInfoAboutItems.length}`)
 
@@ -281,19 +276,13 @@ const parser = async () => {
 
   Store.parsingDate = day
 
-  await page.close();
-
   const { choice } = await selectMode('Выберите брэнд', brands);
   if (choice === ALL_BRANDS) {
     console.log('Вы выбрали режим:', ALL_BRANDS)
-    const allChunkedBrands = chunkArray(brands, TREADS)
-
-    for await (const brandsInChunk of allChunkedBrands) {
-      await Promise.all(brandsInChunk.map((brandInfo) => {
-        if (brandInfo.value !== ALL_BRANDS) {
-          return parsingByBrand(brandInfo)
-        }
-      }))
+    for await (const brandInfo of brands) {
+      if (brandInfo.value !== ALL_BRANDS) {
+        await parsingByBrand(brandInfo, page)
+      }
     }
 
     console.timeEnd('scraping');
@@ -303,7 +292,7 @@ const parser = async () => {
   /////////////////// парсинг по брэнду ////////////////
   const brandInfo = brands.find(({ name }) => name === choice)
 
-  await parsingByBrand(brandInfo)
+  await parsingByBrand(brandInfo, page)
 
   console.timeEnd('scraping');
   await browser.close();
