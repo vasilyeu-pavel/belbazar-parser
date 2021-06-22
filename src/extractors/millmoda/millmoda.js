@@ -11,6 +11,8 @@ const { getBrowser, cookiesParser, getPage, getCookies, auth } = require('../../
 const { delay } = require('../../utils/utils');
 const { getFormData } = require('../../utils/formData');
 
+const { sendTelegramMessage } = require('../../utils/telegramApi')
+
 const {
     createImg,
     getSize,
@@ -128,6 +130,7 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
 
             } catch (e) {
               console.log(e)
+              await sendTelegramMessage({ message: e.message, id })
             }
         }
     }
@@ -181,6 +184,7 @@ const createThing = async ({
                     await delay(1000);
                 } catch (e) {
                     console.log(`img response is not object', ${filename}`);
+                    throw new Error(e);
                 }
 
             }
@@ -208,6 +212,7 @@ const createThing = async ({
     } catch (e) {
         console.log('ошибка в прикрепление id картинки к шмоту');
         console.log(e);
+        throw new Error(e);
     }
 
     const addUrl = 'https://millmoda.ru/admin/catalog/add/item?page=1';
@@ -251,6 +256,7 @@ const createThing = async ({
     } catch (e) {
         console.log("Ошибка в запросе создание/изменения шмота на милмоде")
         console.log(e)
+        throw new Error(e);
     }
 };
 
