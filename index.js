@@ -1,3 +1,4 @@
+const process = require('process');
 const { remove } = require('./src/utils/fileAPI');
 const { parser: millModaParser } = require('./src/extractors/millmoda/millmoda.js');
 const { parser: belLavkaParser } = require('./src/extractors/belLavka');
@@ -42,4 +43,7 @@ const run = async () => {
 };
 
 run()
-    .catch(e => console.log(e));
+    .catch(e => console.log(e))
+    .finally(() => {
+        process.kill(process.pid)
+    });

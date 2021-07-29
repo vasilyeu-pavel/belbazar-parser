@@ -250,7 +250,10 @@ const parsingByBrand = async (brandInfo, page) => {
 
   const filteredItems = allInfoAboutItems
     .filter(({ updated_date }) => compareDate(updated_date))
-    .filter(({ price_zakupka }) => !!price_zakupka)
+
+  // todo Закоментировал фильтр потому что на беллавке акция на все товары
+  //  и слива сказал что что-то идет не так xD
+    //.filter(({ price_zakupka }) => !!price_zakupka)
 
   console.log(`стало ${filteredItems.length}`)
 
