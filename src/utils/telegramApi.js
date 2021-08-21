@@ -7,16 +7,17 @@ const config = {
 
 const bot = new TelegramBot(config.token, { polling: true });
 
-const createMessage = ({ id, message }) => {
-  return `*[${id} - Ошибка milmoda]*:
+const createMessage = ({ id, message }) => `*[${id} - Ошибка milmoda]*:
   ${message}
  `;
-};
 
 const sendTelegramMessage = async (error) => {
   const messages = createMessage(error);
 
-  return await bot.sendMessage(config.chatId, messages, { parse_mode: "markdown" });
+  return await bot.sendMessage(config.chatId, messages, { parse_mode: 'markdown' });
 };
 
-module.exports = { sendTelegramMessage };
+module.exports = {
+  sendTelegramMessage,
+  tgConfig: config,
+};
