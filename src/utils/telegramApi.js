@@ -14,7 +14,7 @@ const createMessage = ({ id, message }) => {
 };
 
 const sendTelegramMessage = async (error) => {
-  const messages = createMessage(error)
+  const messages = createMessage(error);
 
   return await bot.sendMessage(config.chatId, messages, { parse_mode: "markdown" });
 };

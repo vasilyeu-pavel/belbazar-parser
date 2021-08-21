@@ -11,7 +11,7 @@ const { getBrowser, cookiesParser, getPage, getCookies, auth } = require('../../
 const { delay } = require('../../utils/utils');
 const { getFormData } = require('../../utils/formData');
 
-const { sendTelegramMessage } = require('../../utils/telegramApi')
+const { sendTelegramMessage } = require('../../utils/telegramApi');
 
 const {
     createImg,
@@ -22,6 +22,7 @@ const {
     checkIsItemIsCreatedFromRequest,
     removeImg,
     getOldPrice,
+    getPrice,
 } = require('./helpers');
 
 const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
@@ -68,7 +69,10 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
                     console.log(`Создаем ${itemInfo.indexid}`);
                     const html = await createThing({
                         cookie: parsedCookie,
-                        itemInfo,
+                        itemInfo: {
+                            ...itemInfo,
+                            price_zakupka: getPrice(itemInfo),
+                        },
                         allImgPath,
                         isAddMode: true,
                         page_url,
@@ -93,8 +97,8 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
                     console.log(`Обновляем ${createdId} (${itemInfo.indexid})`);
 
                     const priceZakupka =  withoutUpdatePrice ?
-                        price || itemInfo.price_zakupka
-                        : itemInfo.price_zakupka;
+                        price || getPrice(itemInfo)
+                        : getPrice(itemInfo);
 
                     const oldPrice = withoutUpdateOldPrice ?
                         await getOldPrice({
@@ -106,7 +110,8 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
 
                     console.log(
                         withoutUpdatePrice ? "БЕРЕМ СТАРУЮ ЦЕНУ" : "БЕРЕМ НОВУЮ ЦЕНУ",
-                        priceZakupka, oldPrice
+                        priceZakupka,
+                        oldPrice,
                     );
 
 
@@ -129,7 +134,7 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
                 }
 
             } catch (e) {
-              console.log(e)
+              console.log(e);
               await sendTelegramMessage({ message: e.message, id })
             }
         }
@@ -220,7 +225,7 @@ const createThing = async ({
 
     const url = isAddMode ? addUrl : editUrl;
 
-    const itemName = `${name || indexid}-1`
+    const itemName = `${name || indexid}-1`;
 
     try {
         // сохранить шмот
@@ -255,7 +260,7 @@ const createThing = async ({
         return await response.text();
     } catch (e) {
         console.log("Ошибка в запросе создание/изменения шмота на милмоде")
-        console.log(e)
+        console.log(e);
         throw new Error(e);
     }
 };

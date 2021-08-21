@@ -167,6 +167,8 @@ const removeImg = async ({ cookie, photoId }) => {
     }
 };
 
+const getPrice = ({ price_zakupka, whole_price }) => price_zakupka || whole_price - 8;
+
 module.exports = {
     createImg,
     getSize,
@@ -176,4 +178,5 @@ module.exports = {
     checkIsItemIsCreatedFromRequest,
     removeImg,
     getOldPrice,
+    getPrice,
 };
