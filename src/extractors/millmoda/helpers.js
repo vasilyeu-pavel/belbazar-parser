@@ -134,6 +134,7 @@ const getOldPrice = async ({ id, sku, cookie }) => {
 
   const root = HTMLParser.parse(response);
   const input = root.querySelector(`[name="${oldPriceSelector}"]`);
+
   if (!input) return '';
   const value = input.getAttribute('value');
   console.log(`Старая цена - ${value}`);

@@ -53,10 +53,12 @@ const getBrands = async () => {
       method: 'POST',
     });
     const brands = await response.json();
+
     if (!brands) throw new Error('Не найдены брэнды');
 
     Object.keys(brands).forEach((letter) => {
       const brandsByLetter = brands[letter];
+
       if (!brandsByLetter) return;
 
       if (Array.isArray(brandsByLetter)) {
@@ -119,6 +121,7 @@ const getItemsInfoByIds = async (ids) => {
 
 const requestCB = (request) => {
   const token = request.headers()[TOKEN];
+
   if (token && !Store.token) Store.token = token;
 };
 
@@ -178,6 +181,7 @@ const getItemInfoByPages = async (page, pageCounts, brandName) => {
   let isCompleted = false;
 
   const result = [];
+
   for await (const pageNumber of pageCounts) {
     if (!isCompleted) {
       console.log(`Парсим страницу ${pageNumber} (брэнд - ${brandName})`);
@@ -211,6 +215,7 @@ const getItemInfoByPages = async (page, pageCounts, brandName) => {
 
 const savingItemsInfo = async (items) => {
   console.log(`Спарсилось ${items.length}, начинаем сохранять`);
+
   // цикл по всем вещам в списке
   for await (const item of items) {
     const { id: numberId, photos } = item;
@@ -282,8 +287,10 @@ const parser = async () => {
   Store.parsingDate = day;
 
   const { choice } = await selectMode('Выберите брэнд', brands);
+
   if (choice === ALL_BRANDS) {
     console.log('Вы выбрали режим:', ALL_BRANDS);
+
     for await (const brandInfo of brands) {
       if (brandInfo.value !== ALL_BRANDS) {
         await parsingByBrand(brandInfo, page);
@@ -291,6 +298,7 @@ const parser = async () => {
     }
 
     console.timeEnd('scraping');
+
     return await browser.close();
   }
 

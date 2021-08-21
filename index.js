@@ -13,11 +13,11 @@ const run = async () => {
   printHeader();
 
   if (!tgConfig.token) {
-    throw new Error("Не указан телеграмм token: /src/utils/telegramApi.js")
+    throw new Error('Не указан телеграмм token: /src/utils/telegramApi.js');
   }
 
   if (!tgConfig.chatId) {
-    throw new Error("Не указан телеграмм chatId: /src/utils/telegramApi.js")
+    throw new Error('Не указан телеграмм chatId: /src/utils/telegramApi.js');
   }
 
   const { choice } = await selectMode();

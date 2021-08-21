@@ -19,7 +19,37 @@
         "no-restricted-syntax":  "off",
         "no-await-in-loop": "off",
         "consistent-return": "off",
-        "no-loop-func": "off"
+        "no-loop-func": "off",
+        "quotes": [2, "single", { "avoidEscape": true }],
+        "indent": [2, 2, { "SwitchCase": 1 }],
+        "padding-line-between-statements": [
+            "error",
+            {
+                "blankLine": "always",
+                "prev": "*",
+                "next": "return"
+            },
+            {
+                "blankLine": "always",
+                "prev": "*",
+                "next": "if"
+            },
+            {
+                "blankLine": "always",
+                "prev": "*",
+                "next": "for"
+            },
+            {
+                "blankLine": "always",
+                "prev": "*",
+                "next": "switch"
+            },
+            {
+                "blankLine": "always",
+                "prev": "*",
+                "next": "try"
+            }
+        ]
     },
     "globals": {
         "document": "readonly",

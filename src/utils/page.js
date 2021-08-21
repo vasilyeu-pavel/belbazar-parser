@@ -105,6 +105,7 @@ const cookiesParser = (cookies, targetName) => {
   const arrFiltered = targetName ? cookies.filter((el) => el.name === targetName) : cookies;
 
   let str = '';
+
   for (let i = 0; i < arrFiltered.length; i++) {
     const elCookies = `${arrFiltered[i].name}=${arrFiltered[i].value}; `;
     str += elCookies;
