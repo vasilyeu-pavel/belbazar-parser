@@ -133,7 +133,7 @@ const getPageCount = async (page) => {
     },
   ) => {
     //  AllItemsSelector was found element with inner like -> ' 763 товара'
-    const allItems = +document.querySelector(AllItemsSelector).innerText.split(' ')[0];
+    const allItems = +[...document.querySelectorAll(AllItemsSelector)][1].innerText.split(' ')[0];
     const countItems = allItems / PerPage;
 
     return {
