@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . --ext .js",
+    "lint-fix": "eslint --fix . --ext .js"
   },
   "author": "",
   "license": "ISC",
@@ -15,13 +17,20 @@
     "form-data": "^3.0.0",
     "html-to-text": "^5.1.1",
     "inquirer": "^7.1.0",
+    "inquirer-datepicker-prompt": "^0.4.2",
     "mkdirp": "^1.0.3",
     "moment": "^2.24.0",
     "node-fetch": "^2.6.0",
     "node-html-parser": "^1.2.16",
+    "node-telegram-bot-api": "^0.53.0",
     "puppeteer": "^2.1.1",
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
     "rimraf": "^3.0.2"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.24.1"
   }
 }
