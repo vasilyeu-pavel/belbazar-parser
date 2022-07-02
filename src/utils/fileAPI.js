@@ -69,6 +69,16 @@ const readFileAsync = (fileName) => new Promise((resolve) => {
   });
 });
 
+const writeFile = (data, fileName) => new Promise((resolve) => {
+  const filepath = path.join(path.resolve(), fileName);
+
+  fs.writeFile(filepath, JSON.stringify(data), (err) => {
+    if (err) throw err;
+    console.log(`The file ${fileName} has been saved!`);
+    resolve();
+  });
+});
+
 const writeFileAsync = (data, fileName) => new Promise((resolve) => {
   const filepath = path.join(path.resolve(), 'src', 'data', fileName);
 
@@ -85,4 +95,5 @@ module.exports = {
   download,
   remove,
   getAllParsedItemPath,
+  writeFile,
 };
