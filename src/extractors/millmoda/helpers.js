@@ -5,7 +5,17 @@ const HTMLParser = require('node-html-parser');
 const { getFormData } = require('../../utils/formData');
 
 const {
-  brands, cats, sizes, sizesEU, heightsValue,
+  brands,
+  cats,
+  sizes,
+  sizesEU,
+  heightsValue,
+  fabrics,
+  collections,
+  seasons,
+  kits,
+  colors,
+  styles,
 } = require('./data');
 
 const createImg = async ({
@@ -59,9 +69,98 @@ const createImg = async ({
   }
 };
 
-const getCatId = (cat) => cats[cat] || null;
+const getCatId = cat => cats[cat] || null;
 
-const getBrandId = (brand) => brands[brand] || null;
+const getBrandId = brand => brands[brand] || null;
+
+///
+
+const getFabricId = fabric_list => {
+  let str = '';
+
+  fabric_list.forEach((fabric) => {
+    const fabricId = fabrics[fabric];
+
+    if (fabricId) {
+      str += `${decodeURI('field[20][]')}=${fabricId}&`;
+    }
+  });
+
+  return str;
+};
+
+const getCollectionId = collection_list => {
+  let str = '';
+
+  collection_list.forEach((collection) => {
+    const collectionId = collections[collection];
+
+    if (collectionId) {
+      str += `${decodeURI('field[1][]')}=${collectionId}&`;
+    }
+  });
+
+  return str;
+};
+
+const getSeasonId = season_list => {
+  let str = '';
+
+  season_list.forEach((season) => {
+    const seasonId = seasons[season];
+
+    if (seasonId) {
+      str += `${decodeURI('field[18][]')}=${seasonId}&`;
+    }
+  });
+
+  return str;
+};
+
+const getKitId = kit_list => {
+  let str = '';
+
+  kit_list.forEach((kit) => {
+    const kitId = kits[kit];
+
+    if (kitId) {
+      str += `${decodeURI('field[10][]')}=${kitId}&`;
+    }
+  });
+
+  return str;
+};
+
+
+const getColorId = color_list => {
+  let str = '';
+
+  color_list.forEach((color) => {
+    const colorId = colors[color];
+
+    if (colorId) {
+      str += `${decodeURI('field[9][]')}=${colorId}&`;
+    }
+  });
+
+  return str;
+};
+
+const getStyleId = style_list => {
+  let str = '';
+
+  style_list.forEach((style) => {
+    const styleId = styles[style];
+
+    if (styleId) {
+      str += `${decodeURI('field[19][]')}=${styleId}&`;
+    }
+  });
+
+  return str;
+};
+
+///
 
 const getSize = (size_list) => {
   let str = '';
@@ -185,4 +284,10 @@ module.exports = {
   removeImg,
   getOldPrice,
   getPrice,
+  getFabricId,
+  getCollectionId,
+  getSeasonId,
+  getKitId,
+  getColorId,
+  getStyleId,
 };

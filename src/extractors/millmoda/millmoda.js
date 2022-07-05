@@ -24,6 +24,12 @@ const {
   removeImg,
   getOldPrice,
   getPrice,
+  getFabricId,
+  getCollectionId,
+  getSeasonId,
+  getKitId,
+  getColorId,
+  getStyleId,
 } = require('./helpers');
 
 const createThing = async ({
@@ -36,7 +42,22 @@ const createThing = async ({
   page_url = '',
 }) => {
   const {
-    price_zakupka, text, sostav, size_list, height, indexid, cat_nazv, brend, oldPrice, name,
+    price_zakupka,
+    text,
+    sostav,
+    size_list,
+    height,
+    indexid,
+    cat_nazv,
+    brend,
+    oldPrice,
+    name,
+    colors,
+    collections,
+    kits,
+    fabrics,
+    styles,
+    season,
   } = itemInfo;
 
   const dateNow = moment().format('DD.MM.YYYY');
@@ -47,7 +68,7 @@ const createThing = async ({
     // фотки создавать только при создании
     // залить все картинки
     if (isParallel) {
-      const createdImgs = await Promise.all(allImgPath.map((filename) => createImg({
+      const createdImgs = await Promise.all(allImgPath.map(filename => createImg({
         cookie,
         filename,
         add_date: dateNow,
@@ -116,24 +137,30 @@ const createThing = async ({
           'content-type': 'application/x-www-form-urlencoded',
         },
         body: `
-                script=${isAddMode ? 'add' : 'edit'}&name%5Bru%5D=${itemName}&sku=${indexid}&
-                category=${getCatId(cat_nazv)}&
-                brand=${getBrandId(brend.nazv)}&
-                short_desc%5Bru%5D%5B1%5D=${sostav}&
-                desc%5Bru%5D%5B1%5D=${text}&
-                price%5B1%5D=${price_zakupka}&
-                price%5B2%5D=${oldPrice || ''}&
-                ${getSize(size_list)}
-                ${getHeight(`${height}`)}
-                ${photoIds}
-                avail=1&
-                skin=item-new&
-                add_date=${dateNow}&
-                files%5B%5D=&
-                seo_title%5Bru%5D=&
-                seo_desc%5Bru%5D=&
-                page_url=${page_url}&
-                seo_keys%5Bru%5D=`.replace(/\n/g, ''),
+          script=${isAddMode ? 'add' : 'edit'}&name%5Bru%5D=${itemName}&sku=${indexid}&
+          category=${getCatId(cat_nazv)}&
+          brand=${getBrandId(brend.nazv)}&
+          short_desc%5Bru%5D%5B1%5D=${sostav}&
+          desc%5Bru%5D%5B1%5D=${text}&
+          price%5B1%5D=${price_zakupka}&
+          price%5B2%5D=${oldPrice || ''}&
+          ${getSize(size_list)}
+          ${getHeight(`${height}`)}
+          ${photoIds}
+          ${getFabricId(Object.values(fabrics).map(({ value }) => value && value.trim()).filter(Boolean))}
+          ${getCollectionId(Object.values(collections).map(({ value }) => value && value.trim()).filter(Boolean))}
+          ${getSeasonId([season.value])}
+          ${getKitId(Object.values(kits).map(({ value }) => value && value.trim()).filter(Boolean))}
+          ${getColorId(Object.values(colors).map(({ value }) => value && value.trim()).filter(Boolean))}
+          ${getStyleId(Object.values(styles).map(({ value }) => value && value.trim()).filter(Boolean))}
+          avail=1&
+          skin=item-new&
+          add_date=${dateNow}&
+          files%5B%5D=&
+          seo_title%5Bru%5D=&
+          seo_desc%5Bru%5D=&
+          page_url=${page_url}&
+          seo_keys%5Bru%5D=`.replace(/\n/g, ''),
         method: 'POST',
       });
 
@@ -168,9 +195,9 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
 
     if (
       Object.keys(itemInfo).length
-            && itemInfo.brend
-            && getCatId(itemInfo.cat_nazv)
-            && getBrandId(itemInfo.brend.nazv || '')
+        && itemInfo.brend
+        && getCatId(itemInfo.cat_nazv)
+        && getBrandId(itemInfo.brend.nazv || '')
     ) {
       // получить все пути к картинкам в товаре
       const allImgPath = fs.readdirSync(path)
