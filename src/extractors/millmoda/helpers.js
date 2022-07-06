@@ -120,6 +120,8 @@ const getSeasonId = season_list => {
 const getKitId = kit_list => {
   let str = '';
 
+  console.log({kit_list})
+
   kit_list.forEach((kit) => {
     const kitId = kits[kit];
 

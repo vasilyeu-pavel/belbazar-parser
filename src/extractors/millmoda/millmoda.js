@@ -128,6 +128,17 @@ const createThing = async ({
 
   const itemName = `${name || indexid}-1`;
 
+  const prepareField = field => {
+    if (!field) return []
+
+    console.log({ field })
+
+    if (Array.isArray(field)) return field.map(({ value }) => value && value.trim()).filter(Boolean)
+    if (typeof field === "object") return Object.values(kits).map(({ value }) => value && value.trim()).filter(Boolean)
+
+    return []
+  }
+
   try {
     // сохранить шмот
     const response = await fetch(url,
@@ -147,12 +158,12 @@ const createThing = async ({
           ${getSize(size_list)}
           ${getHeight(`${height}`)}
           ${photoIds}
-          ${getFabricId(Object.values(fabrics).map(({ value }) => value && value.trim()).filter(Boolean))}
-          ${getCollectionId(Object.values(collections).map(({ value }) => value && value.trim()).filter(Boolean))}
+          ${getFabricId(prepareField(fabrics))}
+          ${getCollectionId(prepareField(collections))}
           ${getSeasonId([season.value])}
-          ${getKitId(Object.values(kits).map(({ value }) => value && value.trim()).filter(Boolean))}
-          ${getColorId(Object.values(colors).map(({ value }) => value && value.trim()).filter(Boolean))}
-          ${getStyleId(Object.values(styles).map(({ value }) => value && value.trim()).filter(Boolean))}
+          ${getKitId(prepareField(kits))}
+          ${getColorId(prepareField(colors))}
+          ${getStyleId(prepareField(styles))}
           avail=1&
           skin=item-new&
           add_date=${dateNow}&
@@ -184,7 +195,7 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
 
   const parsedCookie = cookiesParser(cookie);
 
-  console.log(parsedCookie);
+  console.log("cookie:", parsedCookie);
 
   const allParsedItems = getAllParsedItemPath();
 

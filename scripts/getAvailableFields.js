@@ -20,15 +20,30 @@ const test = async () => {
 
             if (!field) return
 
-            if (typeof field === "object") {
-                Object
-                    .values(field)
+            if (Array.isArray(field)) {
+                field
                     .filter(fieldValue => typeof fieldValue === "object")
                     .filter(fieldValue => !!fieldValue.value)
                     .map(fieldValue => fieldValue.value)
                     .forEach(value => {
                         value && typeof value === "string" && map[name].add(value.trim())
                     })
+            }
+
+            if (typeof field === "object") {
+                if (!!field.value) {
+                    map[name].add(value.trim())
+                } else {
+                    Object
+                        .values(field)
+                        .filter(fieldValue => typeof fieldValue === "object")
+                        .filter(fieldValue => !!fieldValue.value)
+                        .map(fieldValue => fieldValue.value)
+                        .forEach(value => {
+                            value && typeof value === "string" && map[name].add(value.trim())
+                        })
+                }
+
             }
         }
 
