@@ -275,34 +275,33 @@ const parser = async () => {
   Store.browser = browser;
 
   const page = await getPage(browser, WHOLESALE_URL, true, requestCB);
-
+  // клик по кнопке "Меню - Бренды - Все А-Я" - для того что б выдрать токен:
   if (!Store.token) {
-    // клик по кнопке "Все брэнде" - для того что б выдрать токен:
-    // hover для того что б открыть меню дропдаун
+    // hover для того что б открыть меню "Меню"
     await page.evaluate(async () => {
-      const menu = document.querySelector('#page > div.page-content > div > div.header > div:nth-child(1) > div > div.header__block-second_block > div.header__block-second_block-menu')
+      const menu = document.querySelector('#page > div > div.main-content > div.header > div:nth-child(2) > div > div:nth-child(1) > div.header__block-second_block-menu')
 
       if (!menu) throw new Error("menu selector not found")
 
-      menu.dispatchEvent(new MouseEvent('mouseover', {'bubbles': true}))
+      menu.dispatchEvent(new MouseEvent('mouseover', {'bubbles': true }))
     })
 
     await page.waitFor(500)
-    // hover для того что б открыть меню брендов
+    // hover для того что б открыть меню "Бренды"
     await page.evaluate(async () => {
-      const li = document.querySelector('#page > div.page-content > div > div.header > div:nth-child(1) > div > div.header__block-second_block > div.header__block-second_block-menu > div > ul > li:nth-child(4)')
+      const li = document.querySelector('#page > div > div.main-content > div.header > div:nth-child(2) > div > div:nth-child(1) > div.header__block-second_block-menu > div > ul > li:nth-child(5)')
 
       if (!li) throw new Error("li selector not found")
-
-      li.dispatchEvent(new MouseEvent('mouseover', {'bubbles': true}))
+      // hover для того что б перейти в нужную категорию
+      li.dispatchEvent(new MouseEvent('mouseover', {'bubbles': true }))
     })
 
     await page.waitFor(500)
-    // клик по кнопке все бренды
+    // клик по кнопке "Все А-Я"
     await page.evaluate(async () => {
-      const a = document.querySelector('#page > div.page-content > div > div.header > div:nth-child(1) > div > div.header__block-second_block > div.header__block-second_block-menu > div > div > div > div:nth-child(1) > div:nth-child(7) > a')
+      const a = document.querySelector('#page > div > div.main-content > div.header > div:nth-child(2) > div > div:nth-child(1) > div.header__block-second_block-menu > div > div > div > div:nth-child(1) > div:nth-child(7) > a')
 
-      if (!a) throw new Error("li selector not found")
+      if (!a) throw new Error("a selector not found")
 
       a.click()
     })
