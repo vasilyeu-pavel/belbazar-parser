@@ -28,7 +28,7 @@ const Store = {
   parsingDate: null,
 };
 
-const WHOLESALE_URL = 'https://bellavka.by/type/wholesale';
+const MAIN_URL = 'https://bellavka.by/';
 const PER_PAGE = 200;
 const getBrandPageUrl = (brandName, page = 1) => `https://bellavka.by/catalog/${brandName}?per_page=${PER_PAGE}&page=${page}`;
 const TOKEN = 'x-xsrf-token';
@@ -274,12 +274,12 @@ const parser = async () => {
   const browser = await getBrowser(true, true);
   Store.browser = browser;
 
-  const page = await getPage(browser, WHOLESALE_URL, true, requestCB);
+  const page = await getPage(browser, MAIN_URL, true, requestCB);
   // клик по кнопке "Меню - Бренды - Все А-Я" - для того что б выдрать токен:
   if (!Store.token) {
     // hover для того что б открыть меню "Меню"
     await page.evaluate(async () => {
-      const menu = document.querySelector('#page > div > div.main-content > div.header > div:nth-child(2) > div > div:nth-child(1) > div.header__block-second_block-menu')
+      const menu = document.querySelector('#page > div > div.main-content > div.header > div:nth-child(3) > div > div:nth-child(1) > div.header__block-second_block-menu')
 
       if (!menu) throw new Error("menu selector not found")
 
@@ -289,7 +289,7 @@ const parser = async () => {
     await page.waitFor(500)
     // hover для того что б открыть меню "Бренды"
     await page.evaluate(async () => {
-      const li = document.querySelector('#page > div > div.main-content > div.header > div:nth-child(2) > div > div:nth-child(1) > div.header__block-second_block-menu > div > ul > li:nth-child(5)')
+      const li = document.querySelector('#page > div > div.main-content > div.header > div:nth-child(3) > div > div:nth-child(1) > div.header__block-second_block-menu > div > ul > li:nth-child(5)')
 
       if (!li) throw new Error("li selector not found")
       // hover для того что б перейти в нужную категорию
@@ -299,7 +299,7 @@ const parser = async () => {
     await page.waitFor(500)
     // клик по кнопке "Все А-Я"
     await page.evaluate(async () => {
-      const a = document.querySelector('#page > div > div.main-content > div.header > div:nth-child(2) > div > div:nth-child(1) > div.header__block-second_block-menu > div > div > div > div:nth-child(1) > div:nth-child(7) > a')
+      const a = document.querySelector('#page > div > div.main-content > div.header > div:nth-child(3) > div > div:nth-child(1) > div.header__block-second_block-menu > div > div > div > div:nth-child(1) > div:nth-child(7) > a')
 
       if (!a) throw new Error("a selector not found")
 
