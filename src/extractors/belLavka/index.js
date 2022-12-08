@@ -103,6 +103,10 @@ const getItemsInfoById = async (id) => {
       method: 'POST',
     });
 
+    if (+res.status === 502) {
+      console.log(`${id} Наебнулось с 502 статусом`)
+    }
+
     return await res.json();
   } catch (e) {
     console.log('Ошибка в методе: getItemsInfoById', e);
@@ -112,7 +116,16 @@ const getItemsInfoById = async (id) => {
 
 const getItemsInfoByIds = async (ids) => {
   try {
-    return await Promise.all(ids.map(getItemsInfoById));
+    const result = []
+
+    for await (const id of ids) {
+      // await delay(200);
+      console.log("processing:", id)
+      result.push(await getItemsInfoById(id))
+    }
+
+    // return await Promise.all(ids.map(getItemsInfoById));
+    return result;
   } catch (e) {
     console.log(e);
     throw new Error('Ошибка в запросах за информацией товара (метод - getItemInfoByPages)');
@@ -199,6 +212,10 @@ const getItemInfoByPages = async (page, pageCounts, brandName) => {
 
         if (!compareDate(updated_at)) {
           isCompleted = true;
+        }
+
+        if (itemsInfo) {
+          console.log(`Спаршено товара со страницы ${pageNumber}:`, itemsInfo.length)
         }
 
         if (itemsInfo && itemsInfo.length) {
