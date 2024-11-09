@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
 const path = require('path');
 const mkdirp = require('mkdirp');
+const chalk = require('chalk');
 
 const {
   getBrowser,
@@ -201,9 +202,28 @@ const getItemInfoByPages = async (page, pageCounts, brandName) => {
       const url = getBrandPageUrl(brandName, pageNumber);
       await page.goto(url);
 
-      const itemsId = await page.evaluate(() => (
-        window.dataLayer[1].ecommerce.impressions.map(({ id }) => id)
-      ));
+      // todo залупа коня, нужно думать, но доставать айдишки из гтм аналитики это явно отстой!
+      const itemsId = await page.evaluate(() => {
+        const idList = [];
+
+        try {
+          idList.push(...window.dataLayer[1].ecommerce.impressions.map(({ id }) => id))
+        } catch(_) {}
+
+        try {
+          const dataLayerEvent = window.dataLayer.find(event => typeof event === "object" && event.page_content && event.page_content.ids)
+
+          !idList.length && dataLayerEvent && (
+            idList.push(...dataLayerEvent.page_content.ids)
+          )
+        } catch(_) {}
+
+        return idList
+      });
+
+      if (!itemsId.length) {
+        console.log(chalk.red("Возможно изменилась переменная из которой берем список id товаров!!!"));
+      }
 
       if (itemsId || itemsId.length) {
         const itemsInfo = await getItemsInfoByIds(itemsId);
