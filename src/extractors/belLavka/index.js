@@ -1,25 +1,25 @@
-const fetch = require('node-fetch');
-const path = require('path');
-const mkdirp = require('mkdirp');
-const chalk = require('chalk');
+const fetch = require("node-fetch");
+const path = require("path");
+const mkdirp = require("mkdirp");
+const chalk = require("chalk");
 
 const {
   getBrowser,
   cookiesParser,
   getPage,
   getCookies,
-} = require('../../utils/page');
-const { selectMode, getParsingDate } = require('../../utils/questions');
-const { getFormData } = require('../../utils/formData');
+} = require("../../utils/page");
+const { selectMode, getParsingDate } = require("../../utils/questions");
+const { getFormData } = require("../../utils/formData");
 
 // utils
-const { delay } = require('../../utils/utils');
+const { delay } = require("../../utils/utils");
 
 // file apis
-const { writeFileAsync, download } = require('../../utils/fileAPI');
+const { writeFileAsync, download } = require("../../utils/fileAPI");
 
 // data for filter
-const { notAvailableBrands } = require('./data');
+const { notAvailableBrands } = require("./data");
 
 const Store = {
   browser: null,
@@ -29,33 +29,45 @@ const Store = {
   parsingDate: null,
 };
 
-const MAIN_URL = 'https://bellavka.by/';
+const MAIN_URL = "https://bellavka.by/";
 const PER_PAGE = 200;
-const getBrandPageUrl = (brandName, page = 1) => `https://bellavka.by/catalog/${brandName}?per_page=${PER_PAGE}&page=${page}`;
-const TOKEN = 'x-xsrf-token';
-const ALL_BRANDS = 'Все брэнды';
-const ALL_ITEMS_SELECTOR = '.cat.title-h4';
-const ALL_BRANDS_SELECTOR = '#page > div > div.main-content > div.header > div.navigation > div > div.second-menu > ul > li.main-menu__li.header__brands-li > div > div:nth-child(1) > div.links > a.all';
 
-const filterByBrands = ({ value: brand }) => !notAvailableBrands.includes(brand);
+const getBrandPageUrl = (brandName, page = 1) => {
+  if (page === 1) {
+    return `https://bellavka.by/catalog/${brandName}?per_page=${PER_PAGE}`;
+  }
 
-const compareDate = (updated_date) => new Date(Store.parsingDate) <= new Date(updated_date);
+  return `https://bellavka.by/catalog/${brandName}?per_page=${PER_PAGE}&page=${page}`;
+};
+
+const TOKEN = "x-xsrf-token";
+const ALL_BRANDS = "Все брэнды";
+const ALL_ITEMS_SELECTOR = ".cat.title-h4";
+const ALL_BRANDS_SELECTOR =
+  "#page > div > div.main-content > div.header > div.navigation > div > div.second-menu > ul > li.main-menu__li.header__brands-li > div > div:nth-child(1) > div.links > a.all";
+
+const filterByBrands = ({ value: brand }) =>
+  !notAvailableBrands.includes(brand);
+
+const compareDate = (updated_date) =>
+  new Date(Store.parsingDate) <= new Date(updated_date);
 
 const getBrands = async () => {
-  if (!Store.token) throw new Error('Невозможно запросить брэнды - отсутствует токен');
+  if (!Store.token)
+    throw new Error("Невозможно запросить брэнды - отсутствует токен");
   const allBrands = [];
 
   try {
-    const response = await fetch('https://bellavka.by/info/brands', {
+    const response = await fetch("https://bellavka.by/info/brands", {
       headers: {
         [TOKEN]: Store.token,
         cookie: cookiesParser(Store.cookie),
       },
-      method: 'POST',
+      method: "POST",
     });
     const brands = await response.json();
 
-    if (!brands) throw new Error('Не найдены брэнды');
+    if (!brands) throw new Error("Не найдены брэнды");
 
     Object.keys(brands).forEach((letter) => {
       const brandsByLetter = brands[letter];
@@ -78,7 +90,7 @@ const getBrands = async () => {
       value: ALL_BRANDS,
       id: 1,
       slug: {
-        slug: '/',
+        slug: "/",
       },
     });
 
@@ -88,48 +100,50 @@ const getBrands = async () => {
     }));
   } catch (e) {
     console.log(e);
-    throw new Error('Ошибка в запросе за брэндами');
+    throw new Error("Ошибка в запросе за брэндами");
   }
 };
 
 const getItemsInfoById = async (id) => {
   try {
     const form = getFormData([{ id }]);
-    const res = await fetch('https://bellavka.by/catalog/quick-view', {
+    const res = await fetch("https://bellavka.by/catalog/quick-view", {
       headers: {
         cookie: cookiesParser(Store.cookie),
-        'x-xsrf-token': Store.token,
+        "x-xsrf-token": Store.token,
       },
       body: form,
-      method: 'POST',
+      method: "POST",
     });
 
     if (+res.status === 502) {
-      console.log(`${id} Наебнулось с 502 статусом`)
+      console.log(`${id} Наебнулось с 502 статусом`);
     }
 
     return await res.json();
   } catch (e) {
-    console.log('Ошибка в методе: getItemsInfoById', e);
+    console.log("Ошибка в методе: getItemsInfoById", e);
     throw new Error(e);
   }
 };
 
 const getItemsInfoByIds = async (ids) => {
   try {
-    const result = []
+    const result = [];
 
     for await (const id of ids) {
-      // await delay(200);
-      console.log("processing:", id)
-      result.push(await getItemsInfoById(id))
+      await delay(500);
+      console.log("processing:", id);
+      result.push(await getItemsInfoById(id));
     }
 
     // return await Promise.all(ids.map(getItemsInfoById));
     return result;
   } catch (e) {
     console.log(e);
-    throw new Error('Ошибка в запросах за информацией товара (метод - getItemInfoByPages)');
+    throw new Error(
+      "Ошибка в запросах за информацией товара (метод - getItemInfoByPages)",
+    );
   }
 };
 
@@ -140,56 +154,64 @@ const requestCB = (request) => {
 };
 
 const getPageCount = async (page) => {
-  const { count, all } = await page.evaluate((
-    {
-      ALL_ITEMS_SELECTOR: AllItemsSelector,
-      PER_PAGE: PerPage,
+  const { count, all } = await page.evaluate(
+    ({ ALL_ITEMS_SELECTOR: AllItemsSelector, PER_PAGE: PerPage }) => {
+      //  AllItemsSelector was found element with inner like -> ' 763 товара'
+      const allItems = +[
+        ...document.querySelectorAll(AllItemsSelector),
+      ][1].innerText.split(" ")[0];
+      const countItems = allItems / PerPage;
+
+      return {
+        count: Math.ceil(countItems),
+        all: allItems,
+      };
     },
-  ) => {
-    //  AllItemsSelector was found element with inner like -> ' 763 товара'
-    const allItems = +[...document.querySelectorAll(AllItemsSelector)][1].innerText.split(' ')[0];
-    const countItems = allItems / PerPage;
+    { ALL_ITEMS_SELECTOR, PER_PAGE },
+  );
 
-    return {
-      count: Math.ceil(countItems),
-      all: allItems,
-    };
-  }, { ALL_ITEMS_SELECTOR, PER_PAGE });
-
-  console.log('Найдено всего товаров:', all);
-  console.log('Найдено страниц с товаром:', count);
+  console.log("Найдено всего товаров:", all);
+  console.log("Найдено страниц с товаром:", count);
 
   return new Array(count).fill(null).map((a, i) => i + 1);
 };
 
-const prepareDataForMilModa = (items) => items.map((item) => {
-  const {
-    id,
-    brand,
-    category,
-    heights,
-    buy_price,
-    sizes,
-    fabric_txt,
-    description,
-    name,
-  } = item;
+const prepareDataForMilModa = (items) =>
+  items.map((item) => {
+    const {
+      id,
+      brand,
+      category,
+      heights,
+      buy_price,
+      sizes,
+      fabric_txt,
+      description,
+      name,
+    } = item;
 
-  return {
-    ...item,
-    indexid: id,
-    articul: name,
-    brend: {
-      nazv: brand.value,
-    },
-    cat_nazv: category.value,
-    height: heights ? Object.keys(heights).map((height) => heights[height].value).join('-').trim() : '164',
-    price_zakupka: buy_price,
-    size_list: sizes ? Object.keys(sizes).map((size) => sizes[size].value) : [],
-    sostav: fabric_txt,
-    text: description,
-  };
-});
+    return {
+      ...item,
+      indexid: id,
+      articul: name,
+      brend: {
+        nazv: brand.value,
+      },
+      cat_nazv: category.value,
+      height: heights
+        ? Object.keys(heights)
+            .map((height) => heights[height].value)
+            .join("-")
+            .trim()
+        : "164",
+      price_zakupka: buy_price,
+      size_list: sizes
+        ? Object.keys(sizes).map((size) => sizes[size].value)
+        : [],
+      sostav: fabric_txt,
+      text: description,
+    };
+  });
 
 const getItemInfoByPages = async (page, pageCounts, brandName) => {
   let isCompleted = false;
@@ -207,22 +229,33 @@ const getItemInfoByPages = async (page, pageCounts, brandName) => {
         const idList = [];
 
         try {
-          idList.push(...window.dataLayer[1].ecommerce.impressions.map(({ id }) => id))
-        } catch(_) {}
+          idList.push(
+            ...window.dataLayer[1].ecommerce.impressions.map(({ id }) => id),
+          );
+        } catch (_) {}
 
         try {
-          const dataLayerEvent = window.dataLayer.find(event => typeof event === "object" && event.page_content && event.page_content.ids)
+          const dataLayerEvent = window.dataLayer.find(
+            (event) =>
+              typeof event === "object" &&
+              event.page_content &&
+              event.page_content.ids,
+          );
 
-          !idList.length && dataLayerEvent && (
-            idList.push(...dataLayerEvent.page_content.ids)
-          )
-        } catch(_) {}
+          !idList.length &&
+            dataLayerEvent &&
+            idList.push(...dataLayerEvent.page_content.ids);
+        } catch (_) {}
 
-        return idList
+        return idList;
       });
 
       if (!itemsId.length) {
-        console.log(chalk.red("Возможно изменилась переменная из которой берем список id товаров!!!"));
+        console.log(
+          chalk.red(
+            "Возможно изменилась переменная из которой берем список id товаров!!!",
+          ),
+        );
       }
 
       if (itemsId || itemsId.length) {
@@ -235,7 +268,10 @@ const getItemInfoByPages = async (page, pageCounts, brandName) => {
         }
 
         if (itemsInfo) {
-          console.log(`Спаршено товара со страницы ${pageNumber}:`, itemsInfo.length)
+          console.log(
+            `Спаршено товара со страницы ${pageNumber}:`,
+            itemsInfo.length,
+          );
         }
 
         if (itemsInfo && itemsInfo.length) {
@@ -243,7 +279,9 @@ const getItemInfoByPages = async (page, pageCounts, brandName) => {
         }
       }
     } else {
-      console.log(`Пропускаем страницу ${pageNumber} (брэнд - ${brandName}) - прошла фильтрацию по дате`);
+      console.log(
+        `Пропускаем страницу ${pageNumber} (брэнд - ${brandName}) - прошла фильтрацию по дате`,
+      );
     }
   }
 
@@ -258,11 +296,13 @@ const savingItemsInfo = async (items) => {
     const { id: numberId, photos } = item;
     const id = `${numberId}`;
 
-    const folderPath = path.join(path.resolve(), 'src', 'data');
+    const folderPath = path.join(path.resolve(), "src", "data");
     await mkdirp(path.join(folderPath, id));
 
     // скачать все картинки параллельно
-    await Promise.all(photos.map(({ full }, i) => full && download(full, id, `${id}_${i + 1}`)));
+    await Promise.all(
+      photos.map(({ full }, i) => full && download(full, id, `${id}_${i + 1}`)),
+    );
 
     await delay(100);
 
@@ -278,9 +318,15 @@ const savingItemsInfo = async (items) => {
 };
 
 const parsingByBrand = async (brandInfo, page) => {
-  if (!brandInfo) throw new Error('Что то пошло не так, не сопоставился брэнд с вашим выбором');
+  if (!brandInfo)
+    throw new Error(
+      "Что то пошло не так, не сопоставился брэнд с вашим выбором",
+    );
 
-  const { slug: { slug }, value } = brandInfo;
+  const {
+    slug: { slug },
+    value,
+  } = brandInfo;
 
   console.log(`Начинаем парсить брэнд: ${value}`);
 
@@ -290,10 +336,13 @@ const parsingByBrand = async (brandInfo, page) => {
 
   const allInfoAboutItems = await getItemInfoByPages(page, pageCounts, slug);
 
-  console.log(`Фильтруем спаршеные товары по дате (дата ${Store.parsingDate}), было ${allInfoAboutItems.length}`);
+  console.log(
+    `Фильтруем спаршеные товары по дате (дата ${Store.parsingDate}), было ${allInfoAboutItems.length}`,
+  );
 
-  const filteredItems = allInfoAboutItems
-    .filter(({ updated_date }) => compareDate(updated_date));
+  const filteredItems = allInfoAboutItems.filter(({ updated_date }) =>
+    compareDate(updated_date),
+  );
 
   // todo Закоментировал фильтр потому что на беллавке акция на все товары
   //  и слива сказал что что-то идет не так xD
@@ -305,8 +354,8 @@ const parsingByBrand = async (brandInfo, page) => {
 };
 
 const parser = async () => {
-  console.time('scraping');
-  console.log('scraping...');
+  console.time("scraping");
+  console.log("scraping...");
 
   const browser = await getBrowser(true, true);
   Store.browser = browser;
@@ -316,32 +365,38 @@ const parser = async () => {
   if (!Store.token) {
     // hover для того что б открыть меню "Меню"
     await page.evaluate(async () => {
-      const menu = document.querySelector('#page > div > div.main-content > div.header > div:nth-child(2) > div > div.header__navigation-wrapper > div.header__block-second_block-menu')
+      const menu = document.querySelector(
+        "#page > div > div.main-content > div.header > div:nth-child(2) > div > div.header__navigation-wrapper > div.header__block-second_block-menu",
+      );
 
-      if (!menu) throw new Error("menu selector not found")
+      if (!menu) throw new Error("menu selector not found");
 
-      menu.dispatchEvent(new MouseEvent('mouseover', {'bubbles': true }))
-    })
+      menu.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+    });
 
-    await page.waitFor(500)
+    await page.waitFor(500);
     // hover для того что б открыть меню "Бренды"
     await page.evaluate(async () => {
-      const li = document.querySelector('#page > div > div.main-content > div.header > div:nth-child(2) > div > div.header__navigation-wrapper > div.header__block-second_block-menu ul > li:nth-child(5)')
+      const li = document.querySelector(
+        "#page > div > div.main-content > div.header > div:nth-child(2) > div > div.header__navigation-wrapper > div.header__block-second_block-menu ul > li:nth-child(5)",
+      );
 
-      if (!li) throw new Error("li selector not found")
+      if (!li) throw new Error("li selector not found");
       // hover для того что б перейти в нужную категорию
-      li.dispatchEvent(new MouseEvent('mouseover', {'bubbles': true }))
-    })
+      li.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+    });
 
-    await page.waitFor(500)
+    await page.waitFor(500);
     // клик по кнопке "Все А-Я"
     await page.evaluate(async () => {
-      const a = document.querySelector('#page > div > div.main-content > div.header > div:nth-child(2) > div > div.header__navigation-wrapper > div.header__block-second_block-menu.active > div > div > div > div:nth-child(1) > a.navigation-item__right-section-text--bold')
+      const a = document.querySelector(
+        "#page > div > div.main-content > div.header > div:nth-child(2) > div > div.header__navigation-wrapper > div.header__block-second_block-menu.active > div > div > div > div:nth-child(1) > a.navigation-item__right-section-text--bold",
+      );
 
-      if (!a) throw new Error("a selector not found")
+      if (!a) throw new Error("a selector not found");
 
-      a.click()
-    })
+      a.click();
+    });
   }
 
   Store.cookie = await getCookies(page);
@@ -352,10 +407,10 @@ const parser = async () => {
 
   Store.parsingDate = day;
 
-  const { choice } = await selectMode('Выберите брэнд', brands);
+  const { choice } = await selectMode("Выберите брэнд", brands);
 
   if (choice === ALL_BRANDS) {
-    console.log('Вы выбрали режим:', ALL_BRANDS);
+    console.log("Вы выбрали режим:", ALL_BRANDS);
 
     for await (const brandInfo of brands) {
       if (brandInfo.value !== ALL_BRANDS) {
@@ -363,7 +418,7 @@ const parser = async () => {
       }
     }
 
-    console.timeEnd('scraping');
+    console.timeEnd("scraping");
 
     return await browser.close();
   }
@@ -373,7 +428,7 @@ const parser = async () => {
 
   await parsingByBrand(brandInfo, page);
 
-  console.timeEnd('scraping');
+  console.timeEnd("scraping");
   await browser.close();
 };
 
