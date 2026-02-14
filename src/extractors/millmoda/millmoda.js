@@ -1,18 +1,20 @@
-const moment = require('moment');
-const fetch = require('node-fetch');
-const fs = require('fs');
+const moment = require("moment");
+const fetch = require("node-fetch");
+const fs = require("fs");
 
-const { getAllParsedItemPath, readFileAsync } = require('../../utils/fileAPI');
+const { getAllParsedItemPath, readFileAsync } = require("../../utils/fileAPI");
 
-const { creds, selectors } = require('./data');
+const { creds, selectors } = require("./data");
 
 const {
-  getBrowser, cookiesParser, getPage, getCookies, auth,
-} = require('../../utils/page');
+  getBrowser,
+  cookiesParser,
+  getPage,
+  getCookies,
+  auth,
+} = require("../../utils/page");
 
-const { delay } = require('../../utils/utils');
-
-const { sendTelegramMessage } = require('../../utils/telegramApi');
+const { delay } = require("../../utils/utils");
 
 const {
   createImg,
@@ -30,7 +32,7 @@ const {
   getKitId,
   getColorId,
   getStyleId,
-} = require('./helpers');
+} = require("./helpers");
 
 const createThing = async ({
   cookie,
@@ -39,7 +41,7 @@ const createThing = async ({
   isParallel = false,
   isAddMode = false,
   createdId = null,
-  page_url = '',
+  page_url = "",
 }) => {
   const {
     price_zakupka,
@@ -60,7 +62,9 @@ const createThing = async ({
     season,
   } = itemInfo;
 
-  const dateNow = moment().format('DD.MM.YYYY');
+  console.log(itemInfo);
+
+  const dateNow = moment().format("DD.MM.YYYY");
 
   const imgs = [];
 
@@ -68,12 +72,16 @@ const createThing = async ({
     // фотки создавать только при создании
     // залить все картинки
     if (isParallel) {
-      const createdImgs = await Promise.all(allImgPath.map(filename => createImg({
-        cookie,
-        filename,
-        add_date: dateNow,
-        sku: indexid,
-      })));
+      const createdImgs = await Promise.all(
+        allImgPath.map((filename) =>
+          createImg({
+            cookie,
+            filename,
+            add_date: dateNow,
+            sku: indexid,
+          }),
+        ),
+      );
 
       imgs.push(...createdImgs);
     } else {
@@ -87,7 +95,7 @@ const createThing = async ({
 
         try {
           imgs.push(JSON.parse(img));
-          console.log('photo_response:', img);
+          console.log("photo_response:", img);
 
           await delay(1000);
         } catch (e) {
@@ -97,64 +105,67 @@ const createThing = async ({
       }
     }
   } catch (e) {
-    console.log('error in createImg');
+    console.log("error in createImg");
     console.log(e);
     throw new Error(e);
   }
 
-  let photoIds = '';
+  let photoIds = "";
 
-  if (!imgs) return '';
+  if (!imgs) return "";
 
   try {
     // прикрепить id картинки к шмоту
     imgs.forEach(({ files }) => {
       Object.keys(files).forEach((fileId) => {
         if (fileId && fileId.length) {
-          photoIds += `${decodeURI('photo_id[]')}=${fileId}&`;
+          photoIds += `${decodeURI("photo_id[]")}=${fileId}&`;
         }
       });
     });
   } catch (e) {
-    console.log('ошибка в прикрепление id картинки к шмоту');
+    console.log("ошибка в прикрепление id картинки к шмоту");
     console.log(e);
     throw new Error(e);
   }
 
-  const addUrl = 'https://millmoda.ru/admin/catalog/add/item?page=1';
+  const addUrl = "https://millmoda.ru/admin/catalog/add/item?page=1";
   const editUrl = `https://millmoda.ru/admin/catalog/edit/item/${createdId}?page=1`;
 
   const url = isAddMode ? addUrl : editUrl;
 
   const itemName = `${name || indexid}-1`;
 
-  const prepareField = field => {
-    if (!field) return []
+  const prepareField = (field) => {
+    if (!field) return [];
 
-    console.log({ field })
+    console.log({ field });
 
-    if (Array.isArray(field)) return field.map(({ value }) => value && value.trim()).filter(Boolean)
-    if (typeof field === "object") return Object.values(kits).map(({ value }) => value && value.trim()).filter(Boolean)
+    if (Array.isArray(field))
+      return field.map(({ value }) => value && value.trim()).filter(Boolean);
+    if (typeof field === "object")
+      return Object.values(kits)
+        .map(({ value }) => value && value.trim())
+        .filter(Boolean);
 
-    return []
-  }
+    return [];
+  };
 
   try {
     // сохранить шмот
-    const response = await fetch(url,
-      {
-        headers: {
-          Cookie: cookie,
-          'content-type': 'application/x-www-form-urlencoded',
-        },
-        body: `
-          script=${isAddMode ? 'add' : 'edit'}&name%5Bru%5D=${itemName}&sku=${indexid}&
+    const response = await fetch(url, {
+      headers: {
+        Cookie: cookie,
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: `
+          script=${isAddMode ? "add" : "edit"}&name%5Bru%5D=${itemName}&sku=${indexid}&
           category=${getCatId(cat_nazv)}&
           brand=${getBrandId(brend.nazv)}&
           short_desc%5Bru%5D%5B1%5D=${sostav}&
           desc%5Bru%5D%5B1%5D=${text}&
           price%5B1%5D=${price_zakupka}&
-          price%5B2%5D=${oldPrice || ''}&
+          price%5B2%5D=${oldPrice || ""}&
           ${getSize(size_list)}
           ${getHeight(`${height}`)}
           ${photoIds}
@@ -171,20 +182,20 @@ const createThing = async ({
           seo_title%5Bru%5D=&
           seo_desc%5Bru%5D=&
           page_url=${page_url}&
-          seo_keys%5Bru%5D=`.replace(/\n/g, ''),
-        method: 'POST',
-      });
+          seo_keys%5Bru%5D=`.replace(/\n/g, ""),
+      method: "POST",
+    });
 
     return await response.text();
   } catch (e) {
-    console.log('Ошибка в запросе создание/изменения шмота на милмоде');
+    console.log("Ошибка в запросе создание/изменения шмота на милмоде");
     console.log(e);
     throw new Error(e);
   }
 };
 
 const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
-  const url = 'https://millmoda.ru/admin/login';
+  const url = "https://millmoda.ru/admin/login";
 
   const browser = await getBrowser();
   const page = await getPage(browser, url);
@@ -204,25 +215,33 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
     // получаем json файл в папке с товаром
     const itemInfo = await readFileAsync(`${id}/${id}.json`);
 
+    console.log(itemInfo.cat_nazv);
+
     if (
-      Object.keys(itemInfo).length
-        && itemInfo.brend
-        && getCatId(itemInfo.cat_nazv)
-        && getBrandId(itemInfo.brend.nazv || '')
+      Object.keys(itemInfo).length &&
+      itemInfo.brend &&
+      getCatId(itemInfo.cat_nazv) &&
+      getBrandId(itemInfo.brend.nazv || "")
     ) {
       // получить все пути к картинкам в товаре
-      const allImgPath = fs.readdirSync(path)
-        .filter((file) => file.includes('.jpg'))
+      const allImgPath = fs
+        .readdirSync(path)
+        .filter(
+          (file) =>
+            file.includes(".webp") ||
+            file.includes(".jpg") ||
+            file.includes(".png") ||
+            file.includes(".jpeg"),
+        )
         .map((file) => `${path}/${file}`);
 
-      console.log('<===========Информация о товаре===============>');
+      console.log("<===========Информация о товаре===============>");
       console.log(itemInfo);
-      console.log('<=============================================>');
+      console.log("<=============================================>");
 
       try {
-        const {
-          createdId, images, price, sku, page_url,
-        } = await checkIsItemIsCreatedFromRequest({ itemInfo });
+        const { createdId, images, price, sku, page_url } =
+          await checkIsItemIsCreatedFromRequest({ itemInfo });
 
         if (!createdId) {
           // создать
@@ -238,20 +257,24 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
             page_url,
           });
 
-          if (html.includes('Вход в систему')) {
+          if (html.includes("Вход в систему")) {
             console.log(`Не отправлен запрос на создание ${id}`);
-            console.log('Умер токен, нужно перезапустить скрипт');
+            console.log("Умер токен, нужно перезапустить скрипт");
           } else {
-            console.log('<===========Статус===============>');
+            console.log("<===========Статус===============>");
             console.log(`Товар успешно создан ${id}`);
-            console.log('<================================>');
+            console.log("<================================>");
           }
         } else {
           // удалить все фотки
           if (images && images.length) {
-            await Promise.all(images.map((img) => (
-              img.id && removeImg({ cookie: parsedCookie, photoId: img.id })
-            )));
+            await Promise.all(
+              images.map(
+                (img) =>
+                  img.id &&
+                  removeImg({ cookie: parsedCookie, photoId: img.id }),
+              ),
+            );
           }
           // обновить
           console.log(`Обновляем ${createdId} (${itemInfo.indexid})`);
@@ -262,14 +285,14 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
 
           const oldPrice = withoutUpdateOldPrice
             ? await getOldPrice({
-              id: createdId,
-              sku,
-              cookie: parsedCookie,
-            })
-            : '';
+                id: createdId,
+                sku,
+                cookie: parsedCookie,
+              })
+            : "";
 
           console.log(
-            withoutUpdatePrice ? 'БЕРЕМ СТАРУЮ ЦЕНУ' : 'БЕРЕМ НОВУЮ ЦЕНУ',
+            withoutUpdatePrice ? "БЕРЕМ СТАРУЮ ЦЕНУ" : "БЕРЕМ НОВУЮ ЦЕНУ",
             priceZakupka,
             oldPrice,
           );
@@ -287,13 +310,12 @@ const parser = async ({ withoutUpdatePrice, withoutUpdateOldPrice }) => {
             page_url,
           });
 
-          console.log('<===========Статус===============>');
+          console.log("<===========Статус===============>");
           console.log(`Товар успешно обновлен ${createdId}`);
-          console.log('<================================>');
+          console.log("<================================>");
         }
       } catch (e) {
         console.log(e);
-        await sendTelegramMessage({ message: e.message, id });
       }
     }
   }

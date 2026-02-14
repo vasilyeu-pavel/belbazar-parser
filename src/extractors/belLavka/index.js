@@ -105,6 +105,7 @@ const getItemInfo = async (id) => {
     return data;
   } catch (e) {
     console.log(e);
+    return null;
   }
 };
 
@@ -115,31 +116,63 @@ const prepareDataForMilModa = async (items) => {
     console.log(`Запрашиваем инфу за товаром: ${id}`);
 
     const item = await getItemInfo(id);
-    const { brand, category, options, description, name, prices, fabricText } =
-      item;
 
-    const { height, size } = options || {};
+    if (item) {
+      const {
+        brand,
+        category,
+        options,
+        description,
+        name,
+        prices,
+        fabricText,
+      } = item;
 
-    results.push({
-      ...item,
-      indexid: id,
-      articul: name,
-      brend: {
-        nazv: brand.value,
-      },
-      cat_nazv: category.value,
-      height:
-        height?.items && height.items.length > 0
-          ? height.items
-              .map((item) => item.value)
-              .join("-")
-              .trim()
-          : "164",
-      size_list: size?.items ? size.items.map((item) => item.value) : [],
-      price_zakupka: prices.currentUsd || prices.current,
-      sostav: fabricText,
-      text: description,
-    });
+      const {
+        height,
+        size,
+        season = { items: [] },
+        collection = { items: [] },
+        color = { items: [] },
+        tissue = { items: [] },
+        style = { items: [] },
+        kit = { items: [] },
+      } = options || {};
+
+      const seasonValue =
+        season.items && season.items.length > 0
+          ? (season.items[0] || {}).value || ""
+          : "";
+
+      results.push({
+        ...item,
+        season: {
+          value: seasonValue,
+        },
+        indexid: id,
+        articul: name,
+        brend: {
+          nazv: brand.value,
+        },
+        cat_nazv: category.value,
+        height:
+          height?.items && height.items.length > 0
+            ? height.items
+                .map((item) => item.value)
+                .join("-")
+                .trim()
+            : "164",
+        size_list: size?.items ? size.items.map((item) => item.value) : [],
+        price_zakupka: prices.wholesale,
+        sostav: fabricText,
+        text: description,
+        collections: collection.items,
+        colors: color.items,
+        fabrics: tissue.items,
+        styles: style.items,
+        kits: kit.items,
+      });
+    }
 
     const ms = 1000;
     console.log(`Пауза ${ms}ms перед след запросом`);
@@ -255,7 +288,9 @@ const parsingByBrand = async (brandInfo) => {
   // Start fetching
   await getItemsInfo();
 
-  const filteredItems = allItems.filter(({ date }) => compareDate(date.create));
+  const filteredItems = allItems
+    .filter(({ date }) => compareDate(date.create))
+    .filter(({ isOutlet }) => !isOutlet);
 
   console.log(`стало ${filteredItems.length}`);
 
@@ -270,7 +305,9 @@ const parser = async () => {
 
   const allBrands = await getBrands();
 
-  const brands = allBrands.filter(filterByBrands);
+  const brands = allBrands
+    .filter(filterByBrands)
+    .sort((a, b) => a.value.localeCompare(b.value));
 
   const { day } = await getParsingDate();
 
