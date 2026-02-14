@@ -1,4 +1,5 @@
 const fs = require("fs");
+const sharp = require("sharp");
 const path = require("path");
 const request = require("request");
 const rimraf = require("rimraf");
@@ -25,43 +26,56 @@ const remove = () =>
     });
   });
 
-const download = async (uri, folderName, filename) => {
-  const filepath = path.join(
+const download = async (uri, folderName, filename, options = {}) => {
+  const { quality = 75, maxWidth = 1920, maxHeight = 1080 } = options;
+
+  // Convert to .jpeg extension
+  const finalFilename = filename.replace(/\.webp$/i, ".jpeg");
+  const finalPath = path.join(
     path.resolve(),
     "src",
     "data",
-    `${folderName}/${filename}`,
+    `${folderName}/${finalFilename}`,
   );
 
-  const file = fs.createWriteStream(filepath);
-
   return await new Promise((resolve, reject) => {
+    const sharpInstance = sharp();
+
     request({
-      /* Here you should specify the exact link to the file you are trying to download */
       uri,
       headers: {
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
         "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language":
-          "en-US,en;q=0.9,fr;q=0.8,ro;q=0.7,ru;q=0.6,la;q=0.5,pt;q=0.4,de;q=0.3",
-        "Cache-Control": "max-age=0",
-        Connection: "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
         "User-Agent":
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36",
       },
-      /* GZIP true for most of the websites now, disable it if you don't need it */
       gzip: true,
+      encoding: null,
     })
-      .pipe(file)
+      .on("error", reject)
+      .pipe(sharpInstance)
+      .resize(maxWidth, maxHeight, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .jpeg({
+        quality,
+        mozjpeg: true,
+        progressive: true,
+        optimizeScans: true,
+        chromaSubsampling: "4:2:0",
+      })
+      .pipe(fs.createWriteStream(finalPath))
       .on("finish", () => {
-        console.log(`The file is finished downloading. ${uri}`);
+        const stats = fs.statSync(finalPath);
+        const fileSizeInKB = stats.size / 1024;
+        console.log(
+          `JPEG saved: ${finalFilename} (${fileSizeInKB.toFixed(2)} KB, quality: ${quality})`,
+        );
         resolve();
       })
-      .on("error", (error) => {
-        reject(error);
-      });
+      .on("error", reject);
   }).catch((error) => console.log(`Something happened: ${error}`));
 };
 
