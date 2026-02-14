@@ -294,7 +294,7 @@ const parsingByBrand = async (brandInfo) => {
 
   console.log(`стало ${filteredItems.length}`);
 
-  const preparedItems = await prepareDataForMilModa([filteredItems[0]]);
+  const preparedItems = await prepareDataForMilModa(filteredItems);
 
   await savingItemsInfo(preparedItems);
 };
