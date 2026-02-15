@@ -202,6 +202,8 @@ const savingItemsInfo = async (items) => {
           `${id}_${i + 1}.${getFileExtension(src)}`,
         ),
       ),
+    ).catch((err) =>
+      console.error(`Ошибка при скачивании картинок ${id}`, err),
     );
 
     await delay(1000);
@@ -290,7 +292,9 @@ const parsingByBrand = async (brandInfo) => {
 
   const filteredItems = allItems
     .filter(({ date }) => compareDate(date.create))
-    .filter(({ isOutlet }) => !isOutlet);
+    .filter(({ isOutlet }) => !isOutlet)
+    .filter(({ isActive }) => isActive)
+    .filter(({ status }) => status === "в наличии");
 
   console.log(`стало ${filteredItems.length}`);
 

@@ -38,10 +38,10 @@ const download = async (uri, folderName, filename, options = {}) => {
     `${folderName}/${finalFilename}`,
   );
 
-  return await new Promise((resolve, reject) => {
+  return await new Promise((resolve) => {
     const sharpInstance = sharp();
 
-    request({
+    const requestStream = request({
       uri,
       headers: {
         Accept:
@@ -52,9 +52,21 @@ const download = async (uri, folderName, filename, options = {}) => {
       },
       gzip: true,
       encoding: null,
-    })
-      .on("error", reject)
-      .pipe(sharpInstance)
+    }).on("error", (err) => {
+      console.error(`Download error for ${uri}:`, err.message);
+      resolve();
+    });
+
+    // Handle Sharp transformation errors
+    sharpInstance
+      .on("error", (err) => {
+        console.error(
+          `Sharp processing error for ${uri}: ${err.message}. Skipping image.`,
+        );
+        // Clean up the request stream
+        requestStream.destroy();
+        resolve();
+      })
       .resize(maxWidth, maxHeight, {
         fit: "inside",
         withoutEnlargement: true,
@@ -75,8 +87,17 @@ const download = async (uri, folderName, filename, options = {}) => {
         );
         resolve();
       })
-      .on("error", reject);
-  }).catch((error) => console.log(`Something happened: ${error}`));
+      .on("error", (err) => {
+        console.error(`File write error for ${finalFilename}:`, err.message);
+        resolve();
+      });
+
+    // Pipe request to sharp
+    requestStream.pipe(sharpInstance);
+  }).catch((error) => {
+    console.log(`Something happened in download function: ${error.message}`);
+    // Return void instead of throwing
+  });
 };
 
 const readFileAsync = (fileName) =>
