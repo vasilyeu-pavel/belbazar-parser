@@ -1,88 +1,146 @@
-const fs = require('fs');
-const path = require('path');
-const request = require('request');
-const rimraf = require('rimraf');
+const fs = require("fs");
+const sharp = require("sharp");
+const path = require("path");
+const request = require("request");
+const rimraf = require("rimraf");
 
 const getAllParsedItemPath = () => {
-    const pathFolder = './src/data/';
+  const pathFolder = "./src/data/";
 
-    return fs.readdirSync(pathFolder)
-        .filter(name => fs.lstatSync(path.join(pathFolder, name)).isDirectory())
-        .map((name) => ({
-            id: name,
-            path: path.join(pathFolder, name)
-        }));
+  return fs
+    .readdirSync(pathFolder)
+    .filter((name) => fs.lstatSync(path.join(pathFolder, name)).isDirectory())
+    .map((name) => ({
+      id: name,
+      path: path.join(pathFolder, name),
+    }));
 };
 
-const remove = () => new Promise(resolve => {
-    const folderPath = path.join(path.resolve(), 'src', 'data');
+const remove = () =>
+  new Promise((resolve) => {
+    const folderPath = path.join(path.resolve(), "src", "data");
 
     rimraf(`${folderPath}/*`, () => {
-        console.log('clear was done');
-        resolve();
+      console.log("clear was done");
+      resolve();
     });
-});
+  });
 
-const download = async (uri, folderName, filename) => {
-    const filepath = path.join(path.resolve(), 'src', 'data', `${folderName}/${filename}.jpg`);
+const download = async (uri, folderName, filename, options = {}) => {
+  const { quality = 75, maxWidth = 1920, maxHeight = 1080 } = options;
 
-    let file = fs.createWriteStream(filepath);
+  // Convert to .jpeg extension
+  const finalFilename = filename.replace(/\.webp$/i, ".jpeg");
+  const finalPath = path.join(
+    path.resolve(),
+    "src",
+    "data",
+    `${folderName}/${finalFilename}`,
+  );
 
-    return await new Promise((resolve, reject) => {
-        request({
-            /* Here you should specify the exact link to the file you are trying to download */
-            uri,
-            headers: {
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8,ro;q=0.7,ru;q=0.6,la;q=0.5,pt;q=0.4,de;q=0.3',
-                'Cache-Control': 'max-age=0',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1',
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'
-            },
-            /* GZIP true for most of the websites now, disable it if you don't need it */
-            gzip: true
-        })
-            .pipe(file)
-            .on('finish', () => {
-                console.log(`The file is finished downloading. ${uri}`);
-                resolve();
-            })
-            .on('error', (error) => {
-                reject(error);
-            })
-    })
-        .catch(error => console.log(`Something happened: ${error}`));
+  return await new Promise((resolve) => {
+    const sharpInstance = sharp();
+
+    const requestStream = request({
+      uri,
+      headers: {
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36",
+      },
+      gzip: true,
+      encoding: null,
+    }).on("error", (err) => {
+      console.error(`Download error for ${uri}:`, err.message);
+      resolve();
+    });
+
+    // Handle Sharp transformation errors
+    sharpInstance
+      .on("error", (err) => {
+        console.error(
+          `Sharp processing error for ${uri}: ${err.message}. Skipping image.`,
+        );
+        // Clean up the request stream
+        requestStream.destroy();
+        resolve();
+      })
+      .resize(maxWidth, maxHeight, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .jpeg({
+        quality,
+        mozjpeg: true,
+        progressive: true,
+        optimizeScans: true,
+        chromaSubsampling: "4:2:0",
+      })
+      .pipe(fs.createWriteStream(finalPath))
+      .on("finish", () => {
+        const stats = fs.statSync(finalPath);
+        const fileSizeInKB = stats.size / 1024;
+        console.log(
+          `JPEG saved: ${finalFilename} (${fileSizeInKB.toFixed(2)} KB, quality: ${quality})`,
+        );
+        resolve();
+      })
+      .on("error", (err) => {
+        console.error(`File write error for ${finalFilename}:`, err.message);
+        resolve();
+      });
+
+    // Pipe request to sharp
+    requestStream.pipe(sharpInstance);
+  }).catch((error) => {
+    console.log(`Something happened in download function: ${error.message}`);
+    // Return void instead of throwing
+  });
 };
 
-const readFileAsync = (fileName) => new Promise(resolve => {
-    const filepath = path.join(path.resolve(), 'src', 'data', fileName);
+const readFileAsync = (fileName) =>
+  new Promise((resolve) => {
+    const filepath = path.join(path.resolve(), "src", "data", fileName);
 
     if (!fs.existsSync(filepath)) {
-        return resolve({});
+      return resolve({});
     }
 
     fs.readFile(filepath, (err, data) => {
-        if (err) throw err;
-        resolve(JSON.parse(data));
+      if (err) throw err;
+      resolve(JSON.parse(data));
     });
-});
+  });
 
-const writeFileAsync = (data, fileName) => new Promise(resolve => {
-    const filepath = path.join(path.resolve(), 'src', 'data', fileName);
+const writeFile = (data, fileName) =>
+  new Promise((resolve) => {
+    const filepath = path.join(path.resolve(), fileName);
 
     fs.writeFile(filepath, JSON.stringify(data), (err) => {
-        if (err) throw err;
-        console.log(`The file ${fileName} has been saved!`);
-        resolve();
+      if (err) throw err;
+      console.log(`The file ${fileName} has been saved!`);
+      resolve();
     });
-});
+  });
+
+const writeFileAsync = (data, fileName) =>
+  new Promise((resolve) => {
+    const filepath = path.join(path.resolve(), "src", "data", fileName);
+
+    fs.writeFile(filepath, JSON.stringify(data), (err) => {
+      if (err) throw err;
+      console.log(`The file ${fileName} has been saved!`);
+      resolve();
+    });
+  });
 
 module.exports = {
-    readFileAsync,
-    writeFileAsync,
-    download,
-    remove,
-    getAllParsedItemPath,
+  readFileAsync,
+  writeFileAsync,
+  download,
+  remove,
+  getAllParsedItemPath,
+  writeFile,
 };

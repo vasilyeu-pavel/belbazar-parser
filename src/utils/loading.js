@@ -1,13 +1,13 @@
 const startLoading = () => {
-    const h = ['|', '/', '-', '\\'];
-    let i = 0;
+  const h = ['|', '/', '-', '\\'];
+  let i = 0;
 
-    return setInterval(() => {
-        i = (i > 3) ? 0 : i;
-        console.clear();
-        console.log(h[i]);
-        i++;
-    }, 300);
+  return setInterval(() => {
+    i = (i > 3) ? 0 : i;
+    console.clear();
+    console.log(h[i]);
+    i++;
+  }, 300);
 };
 
 const stopLoading = (interval) => clearInterval(interval);
@@ -16,6 +16,6 @@ const stopLoading = (interval) => clearInterval(interval);
 // stopLoading(i);
 
 module.exports = {
-    stopLoading,
-    startLoading,
+  stopLoading,
+  startLoading,
 };
